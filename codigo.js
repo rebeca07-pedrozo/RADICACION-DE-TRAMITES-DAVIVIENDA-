@@ -286,10 +286,6 @@ function completarFormato(e) {
 
   var archivoPDF = combinarCampos(respuestasConsolidado);
 
-
-
-  // Primero escribe la URL para no perderla si falla el envío de correo
-
   hojaConsolidado.getRange(ultimaFila, ultimaColumna).setValue(archivoPDF.getUrl());
 
 
@@ -1053,7 +1049,6 @@ function procesarFormularioWeb(datos, archivos) {
     // 4. Generar el PDF
 
     var archivoPDF = combinarCampos(respuestasConsolidado);
-
     hojaConsolidado.getRange(ultimaFila, ultimaColumna).setValue(archivoPDF.getUrl());
 
 
@@ -1061,27 +1056,19 @@ function procesarFormularioWeb(datos, archivos) {
     // 5. Enviar correo de confirmación al solicitante
 
     try {
-
       enviarNotificacion(respuestasConsolidado, archivoPDF);
-
     } catch (err) {
-
-      Logger.log("Error correo: " + err);
-
+      Logger.log("Error enviando correo de confirmación: " + err);
+      // No bloqueamos el retorno de éxito si el formulario se guardó pero el correo falló
     }
 
 
 
     return {
-
       ok: true,
-
       radicado: radicado,
-
       urlPDF: archivoPDF.getUrl(),
-
-      mensaje: "Solicitud radicada correctamente con el número " + radicado + "."
-
+      mensaje: "Solicitud radicada correctamente con el número " + radicado + ". Se ha enviado una copia a su correo."
     };
 
   } catch (err) {
@@ -1104,39 +1091,29 @@ function procesarFormularioWeb(datos, archivos) {
 
  */
 
+f/**
+ * Sube los archivos adjuntos del formulario a una subcarpeta dentro de la carpeta destino parametrizada.
+ * @return {String} URLs separadas por coma
+ */
 function subirAdjuntos(archivos, identificador) {
-
   if (!archivos || archivos.length === 0) return "";
 
-
-
-  var carpetaRaiz = DriveApp.getFolderById(obtenerParametro("idCarpetaRepositorio"));
-
+  // MODIFICADO: Ahora usa el nuevo parámetro de la hoja "Parametros"
+  var idCarpetaDestino = obtenerParametro("idCarpetaSoporteRadicados");
+  var carpetaRaiz = DriveApp.getFolderById(idCarpetaDestino);
+  
   var nombreSubcarpeta = "Soportes_Radicacion_" + identificador;
-
   var subcarpeta = carpetaRaiz.createFolder(nombreSubcarpeta);
 
-
-
   var urls = [];
-
   for (var i = 0; i < archivos.length; i++) {
-
     var a = archivos[i];
-
     var blob = Utilities.newBlob(Utilities.base64Decode(a.base64), a.tipo, a.nombre);
-
     var file = subcarpeta.createFile(blob);
-
     urls.push(file.getUrl());
-
   }
-
   return urls.join(", ");
-
 }
-
-
 
 /**
 
