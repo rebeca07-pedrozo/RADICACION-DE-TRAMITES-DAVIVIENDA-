@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <?!= include("Estilos"); ?>
+</head>
+<body>
+  <div class="contenedor">
+
+    <header class="cabecera">
+      <div class="cabecera-titulo">
+        <img src="https://lh3.googleusercontent.com/d/1OJbKJuCteY5mQDzSudzr3yWitJGEHZua" alt="Davivienda" class="logo-imagen">
+        <div>
+          <h1>Solicitud de marcaciones y reintegros</h1>
+          <p class="subtitulo">Retenciones en la Fuente de Renta · ICA · IVA</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="aviso">
+      <strong>Antes de diligenciar el formulario lea el instructivo.</strong><br>
+      Por medio de este formulario se pueden radicar solicitudes de novedades y certificaciones de régimen simple.
+      Para productos de fiduciaria <em>no</em> se tramitan por este medio.
+      <div class="aviso-acciones">
+        <a href="https://drive.google.com/file/d/1Hajkb52VZHRB6yDTEXQmrBOXKP7S0eLq/view" target="_blank">📄 Ver instructivo</a>
+        <a href="https://script.google.com/a/macros/davivienda.com/s/AKfycbySiV1b9qZQlgdR_7lceXrLdoGxOlIqr96CcGPVWpqQ6yIzlssFObly9HkzUAPHwq00/exec" target="_blank">🔍 Consultar estado de radicado</a>
+      </div>
+    </div>
+
+    <form id="formRadicacion" novalidate>
+
+      <!-- ============ SECCIÓN 1: OFICINA ============ -->
+      <fieldset>
+        <legend>1 · Datos de la oficina solicitante</legend>
+
+        <div class="fila">
+          <div class="campo">
+            <label for="nombreoficina">Nombre de la oficina o dependencia <span class="req">*</span></label>
+            <input type="text" id="nombreoficina" name="nombreoficina" required>
+          </div>
+          <div class="campo campo-pequeno">
+            <label for="codigooficina">Código <span class="req">*</span></label>
+            <input type="text" id="codigooficina" name="codigooficina" required>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- ============ SECCIÓN 2: SOLICITANTE ============ -->
+      <fieldset>
+        <legend>2 · Identificación del solicitante</legend>
+
+        <div class="campo">
+          <label for="razonsocial">Nombre o razón social de la empresa <span class="req">*</span></label>
+          <input type="text" id="razonsocial" name="razonsocial" required>
+        </div>
+
+        <div class="fila">
+          <div class="campo">
+            <label for="cedula">Cédula o NIT <span class="req">*</span></label>
+            <input type="text" id="cedula" name="cedula" inputmode="numeric" required>
+          </div>
+          <div class="campo campo-pequeno">
+            <label for="dv">Dígito de verificación</label>
+            <input type="text" id="dv" name="dv" maxlength="1" inputmode="numeric">
+          </div>
+        </div>
+
+        <!-- 🚨 CAMPO DE CORREO ADAPTADO A TU BASE DE DATOS 🚨 -->
+        <div class="campo" style="margin-top: 12px;">
+          <label for="emailaddress">Correo electrónico para notificación <span class="req">*</span></label>
+          <input type="email" id="emailaddress" name="emailaddress" required placeholder="ejemplo@davivienda.com">
+          <small class="hint">A esta dirección enviaremos la confirmación y el PDF de su radicado.</small>
+        </div>
+      </fieldset>
+
+      <!-- ============ SECCIÓN 3: SOLICITUD ============ -->
+      <fieldset>
+        <legend>3 · Tipo de solicitud</legend>
+
+        <div class="campo">
+          <label>Motivo de la solicitud <span class="req">*</span></label>
+          <div class="grupo-radios">
+            <label class="radio-card"><input type="radio" name="motivo" value="Marcación" required> Marcación</label>
+            <label class="radio-card"><input type="radio" name="motivo" value="Reintegro"> Reintegro</label>
+            <label class="radio-card"><input type="radio" name="motivo" value="Ambas"> Ambas</label>
+            <label class="radio-card"><input type="radio" name="motivo" value="Desmarcación"> Desmarcación</label>
+            <label class="radio-card"><input type="radio" name="motivo" value="Certificación Régimen Simple"> Certif. Régimen Simple</label>
+            <label class="radio-card"><input type="radio" name="motivo" value="Desistimiento"> Desistimiento</label>
+            <label class="radio-card"><input type="radio" name="motivo" value="Régimen simple (rete ICA y retefuente)"> Régimen simple (rete ICA y retefuente)</label>
+            <label class="radio-card"><input type="radio" name="motivo" value="Propiedad horizontal (rete ICA y retefuente)"> Propiedad horizontal (rete ICA y retefuente)</label>
+            <label class="radio-card"><input type="radio" name="motivo" value="JELPIT"> JELPIT</label>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="descripcionmotivo">Descripción del motivo <span class="req">*</span></label>
+          <textarea id="descripcionmotivo" name="descripcionmotivo" rows="3" required
+            placeholder="Describa la solicitud de marcación, desmarcación, reintegro o desistimiento. Indique la norma tributaria que lo exime, si aplica."></textarea>
+        </div>
+
+        <div class="campo">
+          <label for="tipoproducto">Tipo de producto <span class="req">*</span></label>
+          <select id="tipoproducto" name="tipoproducto" required>
+            <option value="">-- Seleccione --</option>
+            <option>Cuentas de Ahorro</option>
+            <option>Cuentas Corriente</option>
+            <option>Cuentas AFC</option>
+            <option>Establecimientos de Comercio</option>
+            <option>Modulo Pagador CAI</option>
+            <option>Leasing Habitacional, Activos Fijos, Normalizaciones, BRP</option>
+            <option>Comisiones de Cartera</option>
+            <option>Deceval</option>
+            <option>CDT</option>
+            <option>Impuesto de timbre</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="numeroproducto">Número de producto <span class="req">*</span></label>
+          <input type="text" id="numeroproducto" name="numeroproducto" required>
+          <small class="hint">
+            Leasing: incluir formulario 490 y número de crédito. Proveedores: número de factura.
+            Marcación/reintegro de códigos de establecimiento: digite el NIT del comercio.
+          </small>
+        </div>
+      </fieldset>
+
+      <!-- ============ SECCIÓN 4: REINTEGRO (CONDICIONAL) ============ -->
+      <fieldset id="seccionReintegro" class="seccion-condicional" hidden>
+        <legend>4 · Datos del reintegro</legend>
+
+        <div class="campo">
+          <label>Impuestos involucrados (si corresponde a más de uno)</label>
+          <div class="grupo-checks">
+            <label><input type="checkbox" name="impuestos" value="Retención de Renta"> Retención de Renta</label>
+            <label><input type="checkbox" name="impuestos" value="Retención de ICA"> Retención de ICA</label>
+            <label><input type="checkbox" name="impuestos" value="Retención de IVA"> Retención de IVA</label>
+            <label><input type="checkbox" name="impuestos" value="Impuesto de IVA"> Impuesto de IVA</label>
+          </div>
+        </div>
+
+        <div class="fila">
+          <div class="campo campo-pequeno">
+            <label for="periodo">Año a reintegrar <span class="req">*</span></label>
+            <input type="number" id="periodo" name="periodo" min="2000" max="2100" placeholder="2024">
+          </div>
+          <div class="campo">
+            <label for="valor">Valor a reintegrar <span class="req">*</span></label>
+            <input type="text" id="valor" name="valor" placeholder="1500000.50" pattern="^\d+(\.\d{1,2})?$">
+          </div>
+          <div class="campo">
+            <label for="ciudad">Ciudad o municipio <span class="req">*</span></label>
+            <input type="text" id="ciudad" name="ciudad">
+          </div>
+        </div>
+        <small class="hint">Diligencie una solicitud por cada año a reintegrar. Use punto "." para decimales.</small>
+      </fieldset>
+
+      <!-- ============ SECCIÓN 5: SOPORTES ============ -->
+      <fieldset class="seccion-soportes">
+        <legend>5 · Documentos soporte</legend>
+
+        <div class="instrucciones-banco">
+          <div class="instrucciones-encabezado">
+            <span class="instrucciones-icono">📋</span>
+            <div>
+              <strong>Documentos exigidos por el banco</strong>
+              <p>Antes de adjuntar, verifique que tenga todos los soportes requeridos según el tipo de solicitud.</p>
+            </div>
+          </div>
+          <img src="https://lh3.googleusercontent.com/d/1Xow9YpBqh_nCeVhgWu44AD2nm09jgFOY" alt="Instrucciones del Banco" class="imagen-instrucciones">
+        </div>
+
+        <div class="campo campo-archivos">
+          <label for="soportes">Adjunte los documentos</label>
+          <input type="file" id="soportes" name="soportes" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx">
+          <small class="hint">Puede seleccionar varios archivos. PDF, imágenes, Word o Excel. Máximo 25 MB en total.</small>
+        </div>
+      </fieldset>
+
+      <!-- ============ ACCIONES ============ -->
+      <div class="acciones">
+        <button type="button" id="btnLimpiar" class="btn btn-secundario">Limpiar</button>
+        <button type="submit" id="btnEnviar" class="btn btn-primario">
+          <span class="btn-texto">Radicar solicitud</span>
+          <span class="btn-loader" hidden>Procesando...</span>
+        </button>
+      </div>
+    </form>
+
+    <div id="mensaje" class="mensaje" hidden></div>
+  </div>
+
+  <?!= include("Scripts"); ?>
+</body>
+</html>
