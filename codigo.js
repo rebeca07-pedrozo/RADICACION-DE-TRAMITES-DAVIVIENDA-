@@ -398,122 +398,83 @@ function generarPDFs() {
 
  */
 
+/**
+ * Crea el PDF a partir de la plantilla, reemplazando los tags por los datos.
+ * Reparado: Mantiene el formato de radicado con ceros a la izquierda para el nombre y el PDF.
+ */
 function combinarCampos(registro) {
-
   var idPlantilla;
 
-
-
   if (obtenerParametro("multiplesPlantillas")) {
-
     var opcion = registro[obtenerNumeroColumna(obtenerParametro("columnaOpcionPlantilla")) - 1];
-
     var datosPlantillas = SpreadsheetApp.getActiveSpreadsheet()
-
       .getSheetByName(obtenerParametro("nombreHojaPlantillas"))
-
       .getDataRange()
-
       .getValues();
-
     idPlantilla = buscarPorLlave(opcion, datosPlantillas, 1, 2);
-
     if (!idPlantilla) idPlantilla = obtenerParametro("idPlantilla");
-
   } else {
-
     idPlantilla = obtenerParametro("idPlantilla");
-
   }
 
-
-
-  // Nombre del archivo basado en el radicado (columna 'radicado' en el consolidado)
-
+  // --- ARREGLO DE CEROS A LA IZQUIERDA ---
+  // Forzamos a que el ID del archivo (Radicado) mantenga los ceros (ej: 00008)
   var idNombreArchivo = registro[obtenerNumeroColumna(obtenerParametro("columnaIdArchivo")) - 1];
-
-  var nombreArchivo = obtenerParametro("nombreArchivo").replace("##", idNombreArchivo);
-
-
-
-  // La copia de trabajo se crea en la carpeta general (temporal)
+  var radicadoTexto = idNombreArchivo.toString();
+  while (radicadoTexto.length < 5) {
+    radicadoTexto = "0" + radicadoTexto;
+  }
+  
+  var nombreArchivo = obtenerParametro("nombreArchivo").replace("##", radicadoTexto);
+  // ───────────────────────────────────────
 
   var carpetaTrabajo = DriveApp.getFolderById(obtenerParametro("idCarpetaRepositorio"));
-
-  // El PDF final se guarda en la carpeta dedicada de PDFs
-
   var carpetaPDFs = DriveApp.getFolderById(obtenerParametro("idCarpetaPDFs"));
 
-
-
   var archivoPlantilla = DriveApp.getFileById(idPlantilla)
-
     .makeCopy(nombreArchivo, carpetaTrabajo);
 
-
-
   var datosCampos = SpreadsheetApp.getActiveSpreadsheet()
-
     .getSheetByName(obtenerParametro("nombreHojaCampos"))
-
     .getDataRange()
-
     .getValues();
 
-
-
   var documentoPlantilla = DocumentApp.openById(archivoPlantilla.getId());
-
   var body = documentoPlantilla.getBody();
 
-
-
   for (var i = 1; i < datosCampos.length; i++) {
-
-    var numeroColumna = obtenerNumeroColumna(datosCampos[i][0]);
-
-    var valorColumna = registro[numeroColumna - 1];
-
-
+    var nCol = obtenerNumeroColumna(datosCampos[i][0]);
+    var valorColumna = registro[nCol - 1];
 
     if (valorColumna instanceof Date) {
-
       valorColumna = Utilities.formatDate(valorColumna, "America/Bogota", "dd/MM/yyyy HH:mm");
-
     }
-
     if (valorColumna === null || valorColumna === undefined) {
-
       valorColumna = "";
-
     }
 
-
+    // --- ARREGLO PARA EL REEMPLAZO EN EL DOCUMENTO ---
+    // Si el campo actual que va a reemplazar es el Radicado, le ponemos el texto con ceros
+    var columnaRadicadoId = obtenerNumeroColumna(obtenerParametro("columnaIdArchivo"));
+    if (nCol === columnaRadicadoId) {
+      var valString = valorColumna.toString();
+      while (valString.length < 5) valString = "0" + valString;
+      valorColumna = valString;
+    }
+    // ─────────────────────────────────────────────────
 
     var tag = datosCampos[i][1];
-
     body.replaceText(tag, valorColumna.toString());
-
   }
-
-
 
   documentoPlantilla.saveAndClose();
 
-
-
   var blobPDF = DriveApp.getFileById(archivoPlantilla.getId()).getAs(MimeType.PDF);
-
   var archivoPDF = carpetaPDFs.createFile(blobPDF);
-
   archivoPDF.setName(nombreArchivo);
-
   archivoPlantilla.setTrashed(true);
 
-
-
   return archivoPDF;
-
 }
 
 
@@ -609,10 +570,16 @@ function enviarNotificacion(respuestas, archivoPDF) {
 
 
   var correo = respuestas[obtenerNumeroColumna(columnaCorreo) - 1];
-
   if (!correo) return;
 
-
+  if (!correo && datos.correo) {
+    correo = datos.correo;
+  }
+  
+  if (!correo) {
+    Logger.log("No se pudo enviar el correo porque la dirección está vacía.");
+    return; 
+  }
 
   // Construir un objeto con todos los datos por nombre de columna
 
