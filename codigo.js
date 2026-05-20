@@ -1058,7 +1058,7 @@ function procesarFormularioWeb(datos, archivos) {
 
  */
 
-f/**
+/**
  * Sube los archivos adjuntos del formulario a una subcarpeta dentro de la carpeta destino parametrizada.
  * @return {String} URLs separadas por coma
  */
