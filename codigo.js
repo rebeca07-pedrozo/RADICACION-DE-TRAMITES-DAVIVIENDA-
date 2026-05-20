@@ -570,21 +570,27 @@ function reiniciarRadicado() {
  * Versión reparada: Asegura la carga de parámetros para evitar el error de 'undefined'.
  */
 function enviarNotificacion(respuestas, archivoPDF) {
-  // ─── AGREGA ESTA LÍNEA AQUÍ ─────────────────────────────────────
-  // Si los parámetros no se han cargado globalmente, los cargamos de inmediato
   if (!parametros) parametros = obtenerParametros();
-  // ────────────────────────────────────────────────────────────────
 
-  // 1. Cargamos parámetros básicos
-  var columnaCorreo = obtenerParametro("columnaEnvioCorreo");
-
-  // 2. Construir el objeto 'datos' de inmediato para tener toda la información disponible
   var sps = SpreadsheetApp.getActiveSpreadsheet();
   var hojaConsolidado = sps.getSheetByName(obtenerParametro("nombreHojaConsolidado"));
   var encabezados = hojaConsolidado
     .getRange(1, 1, 1, hojaConsolidado.getLastColumn())
     .getValues()[0];
 
+  // CONTROL DE SEGURIDAD: Si 'respuestas' llegó vacío, rescatamos la última fila de la hoja
+  if (!respuestas || respuestas.length === 0) {
+    var ultimaFila = hojaConsolidado.getLastRow();
+    if (ultimaFila > 1) {
+      respuestas = hojaConsolidado.getRange(ultimaFila, 1, 1, hojaConsolidado.getLastColumn()).getValues()[0];
+      Logger.log("Aviso: 'respuestas' estaba indefinido. Se rescataron los datos de la fila " + ultimaFila);
+    } else {
+      Logger.log("Error: No hay datos en la hoja Consolidado para procesar.");
+      return;
+    }
+  }
+
+  // Construir el objeto 'datos' asignando los encabezados reales
   var datos = {};
   for (var i = 0; i < encabezados.length; i++) {
     var clave = normalizarClave(encabezados[i]);
@@ -595,51 +601,51 @@ function enviarNotificacion(respuestas, archivoPDF) {
     datos[clave] = valor || "";
   }
 
-  // 3. Estrategia de detección de correo (Blindada)
+  // Detección de correo adaptada a tus encabezados reales
   var correo = "";
-  
-  // Intentar obtenerlo por la columna mapeada en parámetros
+  var columnaCorreo = obtenerParametro("columnaEnvioCorreo");
+
+  // 1. Intento por la columna parametrizada
   if (columnaCorreo && columnaCorreo !== 0) {
     var numCol = obtenerNumeroColumna(columnaCorreo);
     correo = respuestas[numCol - 1];
   }
 
-  // SALVAVIDAS: Si la columna falló o está vacía, pero en el objeto mapeado ya existe la clave 'correo'
-  if (!correo && datos.correo) {
-    correo = datos.correo;
+  // 2. SALVAVIDAS REAL: Buscamos en las claves posibles según tus encabezados
+  if (!correo) {
+    correo = datos.emailaddress || datos.correo || datos.marcatemporal; 
+    // Nota: A veces Google Forms guarda el correo en la misma clave de datos si el HTML envía {correo: '...'}
   }
 
-  // Si después de ambos intentos sigue vacío, registramos en log y salimos
+  // Si sigue vacío, registramos en log y salimos sin romper el flujo del formulario
   if (!correo || correo.toString().trim() === "") {
-    Logger.log("No se pudo enviar el correo porque la dirección está vacía en la hoja y en el formulario.");
+    Logger.log("No se pudo enviar el correo porque la dirección 'emailaddress' está vacía.");
     return;
   }
 
-  // 4. Configuración del envío
+  // Configuración del envío
   var radicado = datos.radicado || "(sin asignar)";
   var asunto = "Solicitud radicada #" + radicado + " - " + (datos.razonsocial || "Davivienda");
 
-  // Construir los cuerpos del correo
   var htmlBody = construirCorreoHTML(datos);
   var textoPlano = construirCorreoTextoPlano(datos);
 
-  // 5. Envío nativo
-  MailApp.sendEmail({
+  // Si no se pasó un archivo PDF (por pruebas manuales), evitamos que se rompa el envío
+  var opcionesEnvio = {
     to: correo.toString().trim(),
     subject: asunto,
     body: textoPlano,
     htmlBody: htmlBody,
-    noReply: true,
-    attachments: [archivoPDF.getAs(MimeType.PDF)]
-  });
-  
+    noReply: true
+  };
+
+  if (archivoPDF) {
+    opcionesEnvio.attachments = [archivoPDF.getAs(MimeType.PDF)];
+  }
+
+  MailApp.sendEmail(opcionesEnvio);
   Logger.log("Correo enviado exitosamente a: " + correo);
 }
-/**
-
- * Construye el cuerpo HTML del correo de confirmación.
-
- */
 
 function construirCorreoHTML(datos) {
 
