@@ -561,92 +561,71 @@ function reiniciarRadicado() {
 
  */
 
+/**
+ * Envía un correo con el PDF adjunto.
+ * Versión reparada: Ámbito de variables corregido y validación de correo segura.
+ */
 function enviarNotificacion(respuestas, archivoPDF) {
-
+  // 1. Cargamos parámetros básicos
   var columnaCorreo = obtenerParametro("columnaEnvioCorreo");
 
-  if (!columnaCorreo || columnaCorreo === 0) return;
+  // 2. Construir el objeto 'datos' de inmediato para tener toda la información disponible
+  var sps = SpreadsheetApp.getActiveSpreadsheet();
+  var hojaConsolidado = sps.getSheetByName(obtenerParametro("nombreHojaConsolidado"));
+  var encabezados = hojaConsolidado
+    .getRange(1, 1, 1, hojaConsolidado.getLastColumn())
+    .getValues()[0];
 
+  var datos = {};
+  for (var i = 0; i < encabezados.length; i++) {
+    var clave = normalizarClave(encabezados[i]);
+    var valor = respuestas[i];
+    if (valor instanceof Date) {
+      valor = Utilities.formatDate(valor, "America/Bogota", "dd/MM/yyyy HH:mm");
+    }
+    datos[clave] = valor || "";
+  }
 
+  // 3. Estrategia de detección de correo (Blindada)
+  var correo = "";
+  
+  // Intentar obtenerlo por la columna mapeada en parámetros
+  if (columnaCorreo && columnaCorreo !== 0) {
+    var numCol = obtenerNumeroColumna(columnaCorreo);
+    correo = respuestas[numCol - 1];
+  }
 
-  var correo = respuestas[obtenerNumeroColumna(columnaCorreo) - 1];
-  if (!correo) return;
-
+  // SALVAVIDAS: Si la columna falló o está vacía, pero en el objeto mapeado ya existe la clave 'correo'
   if (!correo && datos.correo) {
     correo = datos.correo;
   }
-  
-  if (!correo) {
-    Logger.log("No se pudo enviar el correo porque la dirección está vacía.");
-    return; 
+
+  // Si después de ambos intentos sigue vacío, registramos en log y salimos
+  if (!correo || correo.toString().trim() === "") {
+    Logger.log("No se pudo enviar el correo porque la dirección está vacía en la hoja y en el formulario.");
+    return;
   }
 
-  // Construir un objeto con todos los datos por nombre de columna
-
-  var sps = SpreadsheetApp.getActiveSpreadsheet();
-
-  var hojaConsolidado = sps.getSheetByName(obtenerParametro("nombreHojaConsolidado"));
-
-  var encabezados = hojaConsolidado
-
-    .getRange(1, 1, 1, hojaConsolidado.getLastColumn())
-
-    .getValues()[0];
-
-
-
-  var datos = {};
-
-  for (var i = 0; i < encabezados.length; i++) {
-
-    var clave = normalizarClave(encabezados[i]);
-
-    var valor = respuestas[i];
-
-    if (valor instanceof Date) {
-
-      valor = Utilities.formatDate(valor, "America/Bogota", "dd/MM/yyyy HH:mm");
-
-    }
-
-    datos[clave] = valor || "";
-
-  }
-
-
-
+  // 4. Configuración del envío
   var radicado = datos.radicado || "(sin asignar)";
-
   var asunto = "Solicitud radicada #" + radicado + " - " + (datos.razonsocial || "Davivienda");
 
-
-
-  // Construir el cuerpo del correo en HTML
-
+  // Construir los cuerpos del correo
   var htmlBody = construirCorreoHTML(datos);
-
   var textoPlano = construirCorreoTextoPlano(datos);
 
-
-
+  // 5. Envío nativo
   MailApp.sendEmail({
-
-    to: correo,
-
+    to: correo.toString().trim(),
     subject: asunto,
-
     body: textoPlano,
-
     htmlBody: htmlBody,
-
     noReply: true,
-
     attachments: [archivoPDF.getAs(MimeType.PDF)]
-
   });
-
+  
+  Logger.log("Correo enviado exitosamente a: " + correo);
 }
-
 
 
 /**
@@ -700,17 +679,14 @@ function construirCorreoHTML(datos) {
         // Número de radicado destacado
 
         '<tr><td style="padding:24px 32px 8px;">' +
-
           '<div style="text-align:center;padding:20px;background:#FCEBEA;border-radius:8px;border:2px dashed #E1251B;">' +
-
             '<div style="font-size:13px;color:#B81E15;letter-spacing:1px;">SU NÚMERO DE RADICADO</div>' +
-
-            '<div style="font-size:36px;font-weight:bold;color:#B81E15;margin-top:8px;letter-spacing:2px;">#' + (datos.radicado || "--") + '</div>' +
-
+            
+            // MODIFICADO: Usamos parseInt para forzar a que pinte "9" en lugar de "00009"
+            '<div style="font-size:36px;font-weight:bold;color:#B81E15;margin-top:8px;letter-spacing:2px;">#' + parseInt(datos.radicado || "0", 10) + '</div>' +
+            
             '<div style="font-size:12px;color:#6b7280;margin-top:8px;">Guarde este número para consultar el estado de su solicitud.</div>' +
-
           '</div>' +
-
         '</td></tr>' +
 
 
@@ -1219,4 +1195,3 @@ function obtenerParametro(parametro) {
   return parametros[parametro];
 
 }
-
