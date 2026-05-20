@@ -565,7 +565,16 @@ function reiniciarRadicado() {
  * Envía un correo con el PDF adjunto.
  * Versión reparada: Ámbito de variables corregido y validación de correo segura.
  */
+/**
+ * Envía un correo con el PDF adjunto.
+ * Versión reparada: Asegura la carga de parámetros para evitar el error de 'undefined'.
+ */
 function enviarNotificacion(respuestas, archivoPDF) {
+  // ─── AGREGA ESTA LÍNEA AQUÍ ─────────────────────────────────────
+  // Si los parámetros no se han cargado globalmente, los cargamos de inmediato
+  if (!parametros) parametros = obtenerParametros();
+  // ────────────────────────────────────────────────────────────────
+
   // 1. Cargamos parámetros básicos
   var columnaCorreo = obtenerParametro("columnaEnvioCorreo");
 
@@ -626,8 +635,6 @@ function enviarNotificacion(respuestas, archivoPDF) {
   
   Logger.log("Correo enviado exitosamente a: " + correo);
 }
-
-
 /**
 
  * Construye el cuerpo HTML del correo de confirmación.
