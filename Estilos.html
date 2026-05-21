@@ -60,7 +60,7 @@
     letter-spacing: 0.5px;
   }
 
-  logo-imagen {
+  .logo-imagen {
     height: 44px;
     width: auto;
     border-radius: 6px;
@@ -197,7 +197,7 @@
     font-size: 13px;
   }
 
-  /* ============ SECCIÓN 5 — SOPORTES (rojo Davivienda) ============ */
+  /* SECCIÓN SOPORTES */
   .seccion-soportes {
     background: linear-gradient(135deg, var(--dav-rojo) 0%, var(--dav-rojo-oscuro) 100%);
     border: none;
@@ -228,7 +228,6 @@
     color: #1f2937;
   }
 
-  /* Caja de instrucciones del banco */
   .instrucciones-banco {
     background: rgba(255, 255, 255, 0.97);
     border-radius: 8px;
@@ -267,7 +266,6 @@
     line-height: 1.5;
   }
 
-  /* Placeholder de imagen */
   .placeholder-imagen {
     background: #fef9f9;
     border: 2px dashed var(--dav-rojo);
@@ -296,7 +294,6 @@
     display: block;
   }
 
-  /* Imagen real cuando se reemplace el placeholder */
   .imagen-instrucciones {
     width: 100%;
     height: auto;
@@ -358,6 +355,13 @@
     color: #374151;
     font-weight: 400;
     margin: 0;
+    padding: 6px 8px;
+    border-radius: 4px;
+    transition: background .15s;
+  }
+
+  .grupo-checks label:hover {
+    background: #f3f4f6;
   }
 
   .grupo-checks input[type="checkbox"] {
@@ -370,6 +374,18 @@
     color: var(--gris-suave);
     font-size: 11.5px;
     line-height: 1.5;
+  }
+
+  /* Indicador de carga para el select de municipios */
+  .select-cargando {
+    background-image: linear-gradient(90deg, transparent, rgba(225, 37, 27, 0.1), transparent);
+    background-size: 200% 100%;
+    animation: cargando 1.2s infinite;
+  }
+
+  @keyframes cargando {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
   }
 
   /* BOTONES */
@@ -495,7 +511,64 @@
     font-weight: 600;
     text-decoration: underline;
   }
+  /* AUTOCOMPLETE DE MUNICIPIOS */
+  .campo-autocomplete {
+    position: relative;
+  }
 
+  .sugerencias {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin: 2px 0 0;
+    padding: 0;
+    list-style: none;
+    background: #fff;
+    border: 1px solid var(--gris-borde);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 100;
+  }
+
+  .sugerencias[hidden] {
+    display: none;
+  }
+
+  .sugerencias li {
+    padding: 8px 12px;
+    font-size: 13.5px;
+    color: #1f2937;
+    cursor: pointer;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background .12s;
+  }
+
+  .sugerencias li:last-child {
+    border-bottom: none;
+  }
+
+  .sugerencias li:hover,
+  .sugerencias li.activo {
+    background: var(--dav-rojo-claro);
+    color: var(--dav-rojo-oscuro);
+  }
+
+  .sugerencias li mark {
+    background: transparent;
+    color: var(--dav-rojo);
+    font-weight: 600;
+  }
+
+  .sugerencias-vacio {
+    padding: 10px 12px;
+    font-size: 12.5px;
+    color: var(--gris-suave);
+    font-style: italic;
+  }
+  
   @media (max-width: 640px) {
     .cabecera, form, .aviso, .mensaje { padding-left: 18px; padding-right: 18px; margin-left: 0; margin-right: 0; }
     .fila { flex-direction: column; gap: 0; }

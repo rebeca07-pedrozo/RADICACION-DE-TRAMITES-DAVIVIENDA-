@@ -9,8 +9,18 @@
     const seccionReintegro = document.getElementById('seccionReintegro');
     const camposReintegro = ['periodo', 'valor', 'ciudad'];
 
+    // Autocomplete ciudad
+    const inputCiudad = document.getElementById('ciudad');
+    const listaSugerencias = document.getElementById('ciudad-sugerencias');
+    const hintCiudad = document.getElementById('ciudad-hint');
+    let municipios = [];          // lista original
+    let municipiosNorm = [];      // misma lista normalizada (sin tildes/mayus) para filtrar rápido
+    let indiceActivo = -1;
+    const MAX_SUGERENCIAS = 8;
+
     const MAX_BYTES = 25 * 1024 * 1024;
-    const MOTIVOS_REINTEGRO = ['Reintegro', 'Ambas', 'Desistimiento'];
+    // Solo "Reintegro" y "Ambas" disparan la sección 4.
+    const MOTIVOS_REINTEGRO = ['Reintegro', 'Ambas'];
 
     function actualizarSeccionReintegro() {
       const motivo = document.querySelector('input[name="motivo"]:checked');
@@ -29,9 +39,187 @@
       r.addEventListener('change', actualizarSeccionReintegro);
     });
 
+    // ====================================================================
+    //  AUTOCOMPLETE DE MUNICIPIOS
+    // ====================================================================
+    function normalizar(texto) {
+      return (texto || '')
+        .toString()
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function cargarMunicipios() {
+      if (!inputCiudad) return;
+
+      google.script.run
+        .withSuccessHandler(function (lista) {
+          if (Array.isArray(lista) && lista.length > 0) {
+            municipios = lista;
+            municipiosNorm = lista.map(normalizar);
+            if (hintCiudad) {
+              hintCiudad.textContent =
+                'Diligencie una solicitud por cada año a reintegrar. Use punto "." para decimales. ' +
+                municipios.length + ' municipios disponibles.';
+            }
+          } else {
+            if (hintCiudad) hintCiudad.textContent = 'No se pudieron cargar los municipios.';
+          }
+        })
+        .withFailureHandler(function (err) {
+          if (hintCiudad) hintCiudad.textContent = 'Error al cargar la lista de municipios.';
+          console.error('Error cargando municipios:', err);
+        })
+        .obtenerMunicipios();
+    }
+
+    function filtrarMunicipios(consulta) {
+      const q = normalizar(consulta);
+      if (!q) return [];
+
+      const empiezan = [];
+      const contienen = [];
+
+      for (let i = 0; i < municipiosNorm.length; i++) {
+        const norm = municipiosNorm[i];
+        if (norm.startsWith(q)) {
+          empiezan.push(municipios[i]);
+        } else if (norm.includes(q)) {
+          contienen.push(municipios[i]);
+        }
+        if (empiezan.length + contienen.length >= MAX_SUGERENCIAS * 2) break;
+      }
+
+      // Los que empiezan con la búsqueda van primero
+      return empiezan.concat(contienen).slice(0, MAX_SUGERENCIAS);
+    }
+
+    function resaltar(texto, consulta) {
+      if (!consulta) return texto;
+      const tNorm = normalizar(texto);
+      const qNorm = normalizar(consulta);
+      const idx = tNorm.indexOf(qNorm);
+      if (idx === -1) return texto;
+      const fin = idx + qNorm.length;
+      return texto.slice(0, idx) +
+        '<mark>' + texto.slice(idx, fin) + '</mark>' +
+        texto.slice(fin);
+    }
+
+    function pintarSugerencias(resultados, consulta) {
+      listaSugerencias.innerHTML = '';
+      indiceActivo = -1;
+
+      if (resultados.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'sugerencias-vacio';
+        li.textContent = 'Sin coincidencias';
+        listaSugerencias.appendChild(li);
+        listaSugerencias.hidden = false;
+        return;
+      }
+
+      resultados.forEach(function (m) {
+        const li = document.createElement('li');
+        li.setAttribute('role', 'option');
+        li.dataset.valor = m;
+        li.innerHTML = resaltar(m, consulta);
+        li.addEventListener('mousedown', function (e) {
+          // mousedown en vez de click para que dispare antes del blur del input
+          e.preventDefault();
+          seleccionar(m);
+        });
+        listaSugerencias.appendChild(li);
+      });
+
+      listaSugerencias.hidden = false;
+    }
+
+    function seleccionar(valor) {
+      inputCiudad.value = valor;
+      listaSugerencias.hidden = true;
+      indiceActivo = -1;
+    }
+
+    function moverActivo(delta) {
+      const items = listaSugerencias.querySelectorAll('li[data-valor]');
+      if (items.length === 0) return;
+
+      if (indiceActivo >= 0 && items[indiceActivo]) {
+        items[indiceActivo].classList.remove('activo');
+      }
+
+      indiceActivo += delta;
+      if (indiceActivo < 0) indiceActivo = items.length - 1;
+      if (indiceActivo >= items.length) indiceActivo = 0;
+
+      items[indiceActivo].classList.add('activo');
+      items[indiceActivo].scrollIntoView({ block: 'nearest' });
+    }
+
+    if (inputCiudad) {
+      inputCiudad.addEventListener('input', function () {
+        const consulta = inputCiudad.value.trim();
+        if (!consulta) {
+          listaSugerencias.hidden = true;
+          return;
+        }
+        pintarSugerencias(filtrarMunicipios(consulta), consulta);
+      });
+
+      inputCiudad.addEventListener('keydown', function (e) {
+        if (listaSugerencias.hidden) {
+          if (e.key === 'ArrowDown' && inputCiudad.value.trim()) {
+            pintarSugerencias(filtrarMunicipios(inputCiudad.value.trim()), inputCiudad.value.trim());
+            moverActivo(1);
+            e.preventDefault();
+          }
+          return;
+        }
+
+        switch (e.key) {
+          case 'ArrowDown':
+            moverActivo(1);
+            e.preventDefault();
+            break;
+          case 'ArrowUp':
+            moverActivo(-1);
+            e.preventDefault();
+            break;
+          case 'Enter':
+            const items = listaSugerencias.querySelectorAll('li[data-valor]');
+            if (indiceActivo >= 0 && items[indiceActivo]) {
+              seleccionar(items[indiceActivo].dataset.valor);
+              e.preventDefault();
+            }
+            break;
+          case 'Escape':
+            listaSugerencias.hidden = true;
+            indiceActivo = -1;
+            break;
+        }
+      });
+
+      inputCiudad.addEventListener('blur', function () {
+        // pequeño delay para permitir el mousedown en la lista
+        setTimeout(function () { listaSugerencias.hidden = true; }, 150);
+      });
+
+      inputCiudad.addEventListener('focus', function () {
+        const consulta = inputCiudad.value.trim();
+        if (consulta) {
+          pintarSugerencias(filtrarMunicipios(consulta), consulta);
+        }
+      });
+    }
+
+    // ====================================================================
+    //  ENVÍO DEL FORMULARIO
+    // ====================================================================
     btnLimpiar.addEventListener('click', () => {
       form.reset();
       mensaje.hidden = true;
+      if (listaSugerencias) listaSugerencias.hidden = true;
       actualizarSeccionReintegro();
     });
 
@@ -133,6 +321,8 @@
       btnLoader.hidden = !activo;
     }
 
+    // Inicialización
     actualizarSeccionReintegro();
+    cargarMunicipios();
   })();
 </script>

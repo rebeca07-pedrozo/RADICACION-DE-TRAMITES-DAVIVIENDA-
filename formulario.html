@@ -83,10 +83,21 @@
             <label class="radio-card"><input type="radio" name="motivo" value="Desmarcación"> Desmarcación</label>
             <label class="radio-card"><input type="radio" name="motivo" value="Certificación Régimen Simple"> Certif. Régimen Simple</label>
             <label class="radio-card"><input type="radio" name="motivo" value="Desistimiento"> Desistimiento</label>
-            <label class="radio-card"><input type="radio" name="motivo" value="Régimen simple (rete ICA y retefuente)"> Régimen simple (rete ICA y retefuente)</label>
-            <label class="radio-card"><input type="radio" name="motivo" value="Propiedad horizontal (rete ICA y retefuente)"> Propiedad horizontal (rete ICA y retefuente)</label>
-            <label class="radio-card"><input type="radio" name="motivo" value="JELPIT"> JELPIT</label>
           </div>
+        </div>
+
+        <div class="campo">
+          <label>Tipo de impuesto <span class="req">*</span></label>
+          <div class="grupo-checks">
+            <label><input type="checkbox" name="impuestos" value="Retención de Renta"> Retención de Renta</label>
+            <label><input type="checkbox" name="impuestos" value="Retención de ICA"> Retención de ICA</label>
+            <label><input type="checkbox" name="impuestos" value="Retención de IVA"> Retención de IVA</label>
+            <label><input type="checkbox" name="impuestos" value="Impuesto de IVA"> Impuesto de IVA</label>
+            <label><input type="checkbox" name="impuestos" value="JELPIT"> JELPIT</label>
+            <label><input type="checkbox" name="impuestos" value="Régimen simple (rete ICA y retefuente)"> Régimen simple (rete ICA y retefuente)</label>
+            <label><input type="checkbox" name="impuestos" value="Propiedad horizontal (rete ICA y retefuente)"> Propiedad horizontal (rete ICA y retefuente)</label>
+          </div>
+          <small class="hint">Seleccione todos los impuestos que apliquen a la solicitud.</small>
         </div>
 
         <div class="campo">
@@ -125,16 +136,6 @@
       <fieldset id="seccionReintegro" class="seccion-condicional" hidden>
         <legend>4 · Datos del reintegro</legend>
 
-        <div class="campo">
-          <label>Impuestos involucrados (si corresponde a más de uno)</label>
-          <div class="grupo-checks">
-            <label><input type="checkbox" name="impuestos" value="Retención de Renta"> Retención de Renta</label>
-            <label><input type="checkbox" name="impuestos" value="Retención de ICA"> Retención de ICA</label>
-            <label><input type="checkbox" name="impuestos" value="Retención de IVA"> Retención de IVA</label>
-            <label><input type="checkbox" name="impuestos" value="Impuesto de IVA"> Impuesto de IVA</label>
-          </div>
-        </div>
-
         <div class="fila">
           <div class="campo campo-pequeno">
             <label for="periodo">Año a reintegrar <span class="req">*</span></label>
@@ -144,12 +145,20 @@
             <label for="valor">Valor a reintegrar <span class="req">*</span></label>
             <input type="text" id="valor" name="valor" placeholder="1500000.50" pattern="^\d+(\.\d{1,2})?$">
           </div>
-          <div class="campo">
+          <div class="campo campo-autocomplete">
             <label for="ciudad">Ciudad o municipio <span class="req">*</span></label>
-            <input type="text" id="ciudad" name="ciudad">
+            <input
+              type="text"
+              id="ciudad"
+              name="ciudad"
+              autocomplete="off"
+              placeholder="Escriba para buscar..."
+              aria-autocomplete="list"
+              aria-controls="ciudad-sugerencias">
+            <ul id="ciudad-sugerencias" class="sugerencias" hidden role="listbox"></ul>
           </div>
         </div>
-        <small class="hint">Diligencie una solicitud por cada año a reintegrar. Use punto "." para decimales.</small>
+        <small class="hint" id="ciudad-hint">Diligencie una solicitud por cada año a reintegrar. Use punto "." para decimales. Cargando municipios...</small>
       </fieldset>
 
       <fieldset class="seccion-soportes">
