@@ -1,0 +1,506 @@
+<style>
+  :root {
+    --dav-rojo: #E1251B;
+    --dav-rojo-oscuro: #B81E15;
+    --dav-rojo-claro: #FCEBEA;
+    --gris-borde: #e5e7eb;
+    --gris-fondo: #f5f6fa;
+    --gris-texto: #4b5563;
+    --gris-suave: #9ca3af;
+    --azul-info: #2563eb;
+    --azul-info-claro: #eff6ff;
+    --verde-exito: #047857;
+    --verde-fondo: #ecfdf5;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+    background: var(--gris-fondo);
+    margin: 0;
+    padding: 16px;
+    color: #1f2937;
+    line-height: 1.5;
+  }
+
+  .contenedor {
+    max-width: 720px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+
+  /* CABECERA */
+  .cabecera {
+    border-top: 4px solid var(--dav-rojo);
+    padding: 22px 32px 18px;
+    border-bottom: 1px solid var(--gris-borde);
+  }
+
+  .cabecera-titulo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-cuadro {
+    width: 44px;
+    height: 44px;
+    background: var(--dav-rojo);
+    color: #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+
+  .cabecera h1 {
+    margin: 0 0 2px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .subtitulo {
+    margin: 0;
+    color: var(--gris-texto);
+    font-size: 13px;
+  }
+
+  /* AVISO INSTRUCTIVO */
+  .aviso {
+    margin: 18px 32px 0;
+    padding: 12px 16px;
+    background: var(--azul-info-claro);
+    border-left: 3px solid var(--azul-info);
+    border-radius: 6px;
+    font-size: 13px;
+    color: #1e3a8a;
+    line-height: 1.6;
+  }
+
+  .aviso-acciones {
+    margin-top: 8px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .aviso-acciones a {
+    color: var(--azul-info);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 12.5px;
+  }
+
+  .aviso-acciones a:hover { text-decoration: underline; }
+
+  /* FORMULARIO */
+  form { padding: 20px 32px 28px; }
+
+  fieldset {
+    border: 1px solid var(--gris-borde);
+    border-radius: 8px;
+    padding: 16px 20px 18px;
+    margin: 0 0 16px;
+    background: #fafbfc;
+    transition: opacity .25s, max-height .25s;
+  }
+
+  legend {
+    padding: 0 8px;
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 13px;
+    letter-spacing: 0.2px;
+  }
+
+  /* SECCIÓN CONDICIONAL DE REINTEGRO */
+  .seccion-condicional {
+    background: var(--dav-rojo-claro);
+    border-color: rgba(225, 37, 27, 0.25);
+  }
+
+  .seccion-condicional legend {
+    color: var(--dav-rojo-oscuro);
+  }
+
+  .seccion-condicional[hidden] { display: none !important; }
+
+  /* CAMPOS */
+  .campo {
+    margin-bottom: 12px;
+    flex: 1;
+  }
+  .campo:last-child { margin-bottom: 0; }
+  .campo-pequeno { flex: 0 0 130px; }
+
+  .fila {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .fila .campo { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: var(--gris-texto);
+  }
+
+  .req { color: var(--dav-rojo); margin-left: 2px; }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 8px 11px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13.5px;
+    font-family: inherit;
+    transition: border-color .15s, box-shadow .15s;
+    background: #fff;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--dav-rojo);
+    box-shadow: 0 0 0 3px rgba(225, 37, 27, 0.10);
+  }
+
+  textarea { resize: vertical; min-height: 60px; }
+
+  input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    border: 1.5px dashed var(--gris-suave);
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  /* ============ SECCIÓN 5 — SOPORTES (rojo Davivienda) ============ */
+  .seccion-soportes {
+    background: linear-gradient(135deg, var(--dav-rojo) 0%, var(--dav-rojo-oscuro) 100%);
+    border: none;
+    color: #fff;
+    padding: 20px 24px 22px;
+  }
+
+  .seccion-soportes legend {
+    color: #fff;
+    background: var(--dav-rojo-oscuro);
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  .seccion-soportes .campo-archivos label {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .seccion-soportes .hint {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .seccion-soportes input[type="file"] {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1.5px dashed rgba(255, 255, 255, 0.6);
+    color: #1f2937;
+  }
+
+  /* Caja de instrucciones del banco */
+  .instrucciones-banco {
+    background: rgba(255, 255, 255, 0.97);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    color: #1f2937;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .instrucciones-encabezado {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #fee2e2;
+  }
+
+  .instrucciones-icono {
+    font-size: 22px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .instrucciones-encabezado strong {
+    color: var(--dav-rojo-oscuro);
+    font-size: 14px;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .instrucciones-encabezado p {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--gris-texto);
+    line-height: 1.5;
+  }
+
+  /* Placeholder de imagen */
+  .placeholder-imagen {
+    background: #fef9f9;
+    border: 2px dashed var(--dav-rojo);
+    border-radius: 8px;
+    padding: 28px 16px;
+    text-align: center;
+    color: var(--dav-rojo-oscuro);
+  }
+
+  .placeholder-icono {
+    font-size: 32px;
+    display: block;
+    margin-bottom: 6px;
+    opacity: 0.7;
+  }
+
+  .placeholder-imagen p {
+    margin: 0 0 6px;
+    font-size: 13px;
+  }
+
+  .placeholder-imagen small {
+    font-size: 11.5px;
+    color: var(--gris-texto);
+    line-height: 1.5;
+    display: block;
+  }
+
+  /* Imagen real cuando se reemplace el placeholder */
+  .imagen-instrucciones {
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    display: block;
+  }
+  /* ============ FIN SECCIÓN 5 ============ */
+
+  /* RADIOS EN GRILLA */
+  .grupo-radios {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .radio-card {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    padding: 8px 10px;
+    border: 1px solid var(--gris-borde);
+    border-radius: 6px;
+    cursor: pointer;
+    background: #fff;
+    transition: all .15s;
+    color: #374151;
+    font-weight: 400;
+    margin: 0;
+  }
+
+  .radio-card:hover {
+    border-color: var(--gris-suave);
+    background: #fafafa;
+  }
+
+  .radio-card input[type="radio"] {
+    accent-color: var(--dav-rojo);
+    margin: 0;
+  }
+
+  .radio-card:has(input:checked) {
+    border-color: var(--dav-rojo);
+    background: var(--dav-rojo-claro);
+    color: var(--dav-rojo-oscuro);
+    font-weight: 500;
+  }
+
+  /* CHECKBOXES */
+  .grupo-checks {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .grupo-checks label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #374151;
+    font-weight: 400;
+    margin: 0;
+  }
+
+  .grupo-checks input[type="checkbox"] {
+    accent-color: var(--dav-rojo);
+  }
+
+  .hint {
+    display: block;
+    margin-top: 5px;
+    color: var(--gris-suave);
+    font-size: 11.5px;
+    line-height: 1.5;
+  }
+
+  /* BOTONES */
+  .acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .btn {
+    padding: 10px 22px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s, transform .05s;
+    font-family: inherit;
+  }
+
+  .btn:active { transform: translateY(1px); }
+
+  .btn-primario {
+    background: var(--dav-rojo);
+    color: #fff;
+  }
+
+  .btn-primario:hover:not(:disabled) { background: var(--dav-rojo-oscuro); }
+
+  .btn-primario:disabled {
+    background: #f5a8a3;
+    cursor: not-allowed;
+  }
+
+  .btn-secundario {
+    background: #fff;
+    color: #374151;
+    border: 1px solid #d1d5db;
+  }
+
+  .btn-secundario:hover { background: #f3f4f6; }
+
+  /* MENSAJES */
+  .mensaje {
+    margin: 0 32px 24px;
+    padding: 14px 16px;
+    border-radius: 6px;
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+
+  .mensaje.exito {
+    background: var(--verde-fondo);
+    border: 1px solid #6ee7b7;
+    color: var(--verde-exito);
+  }
+
+  /* Bloque de éxito con número de radicado destacado */
+  .exito-radicado {
+    text-align: center;
+    padding: 8px;
+  }
+
+  .exito-titulo {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--verde-exito);
+    margin-bottom: 14px;
+  }
+
+  .exito-numero-label {
+    font-size: 12px;
+    color: var(--gris-texto);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .exito-numero {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--dav-rojo-oscuro);
+    letter-spacing: 2px;
+    padding: 14px 20px;
+    background: var(--dav-rojo-claro);
+    border: 2px dashed var(--dav-rojo);
+    border-radius: 8px;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+
+  .exito-info {
+    font-size: 13px;
+    color: var(--gris-texto);
+    line-height: 1.6;
+    margin-top: 8px;
+  }
+
+  .exito-info a {
+    display: inline-block;
+    margin-top: 6px;
+    color: var(--dav-rojo);
+    font-weight: 500;
+    text-decoration: none;
+    padding: 6px 12px;
+    border: 1px solid var(--dav-rojo);
+    border-radius: 6px;
+    transition: all .15s;
+  }
+
+  .exito-info a:hover {
+    background: var(--dav-rojo);
+    color: #fff;
+  }
+
+  .mensaje.error {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    color: #991b1b;
+  }
+
+  .mensaje a {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+  }
+
+  /* RESPONSIVE BÁSICO (modal estrecho) */
+  @media (max-width: 640px) {
+    .cabecera, form, .aviso, .mensaje { padding-left: 18px; padding-right: 18px; margin-left: 0; margin-right: 0; }
+    .fila { flex-direction: column; gap: 0; }
+    .fila .campo { margin-bottom: 12px; }
+    .campo-pequeno { flex: 1; }
+    .grupo-radios { grid-template-columns: repeat(2, 1fr); }
+    .grupo-checks { grid-template-columns: 1fr; }
+  }
+</style>

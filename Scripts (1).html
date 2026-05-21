@@ -1,0 +1,145 @@
+<script>
+  (function () {
+    const form = document.getElementById('formRadicacion');
+    const btnEnviar = document.getElementById('btnEnviar');
+    const btnLimpiar = document.getElementById('btnLimpiar');
+    const mensaje = document.getElementById('mensaje');
+    const btnTexto = btnEnviar.querySelector('.btn-texto');
+    const btnLoader = btnEnviar.querySelector('.btn-loader');
+    const seccionReintegro = document.getElementById('seccionReintegro');
+    const camposReintegro = ['periodo', 'valor', 'ciudad'];
+
+    const MAX_BYTES = 25 * 1024 * 1024;
+    const MOTIVOS_REINTEGRO = ['Reintegro', 'Ambas', 'Desistimiento'];
+
+    // ----- LÓGICA CONDICIONAL: mostrar sección reintegro según motivo -----
+    function actualizarSeccionReintegro() {
+      const motivo = document.querySelector('input[name="motivo"]:checked');
+      const aplica = motivo && MOTIVOS_REINTEGRO.includes(motivo.value);
+      seccionReintegro.hidden = !aplica;
+      camposReintegro.forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) {
+          if (aplica) campo.setAttribute('required', 'required');
+          else campo.removeAttribute('required');
+        }
+      });
+    }
+
+    document.querySelectorAll('input[name="motivo"]').forEach(r => {
+      r.addEventListener('change', actualizarSeccionReintegro);
+    });
+
+    // ----- LIMPIAR -----
+    btnLimpiar.addEventListener('click', () => {
+      form.reset();
+      mensaje.hidden = true;
+      actualizarSeccionReintegro();
+    });
+
+    // ----- ENVIAR -----
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      mensaje.hidden = true;
+
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      setEnviando(true);
+
+      try {
+        const datos = {};
+        const fd = new FormData(form);
+
+        // Recolecta campos simples
+        fd.forEach((valor, clave) => {
+          if (clave === 'soportes' || clave === 'impuestos') return;
+          datos[clave] = valor;
+        });
+
+        // Checkboxes de impuestos (varios valores)
+        const impuestos = fd.getAll('impuestos');
+        datos.impuestos = impuestos.join(', ');
+
+        // Archivos
+        const archivos = await procesarArchivos(document.getElementById('soportes').files);
+
+        google.script.run
+          .withSuccessHandler(onExito)
+          .withFailureHandler(onError)
+          .procesarFormularioWeb(datos, archivos);
+
+      } catch (err) {
+        onError(err);
+      }
+    });
+
+    async function procesarArchivos(fileList) {
+      if (!fileList || fileList.length === 0) return [];
+
+      let total = 0;
+      for (const f of fileList) total += f.size;
+      if (total > MAX_BYTES) {
+        throw new Error('Los archivos exceden los 25 MB permitidos.');
+      }
+
+      const lecturas = Array.from(fileList).map(file => new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result.split(',')[1];
+          res({ nombre: file.name, tipo: file.type || 'application/octet-stream', base64 });
+        };
+        reader.onerror = () => rej(new Error('No se pudo leer ' + file.name));
+        reader.readAsDataURL(file);
+      }));
+
+      return Promise.all(lecturas);
+    }
+
+    function onExito(resp) {
+      setEnviando(false);
+      if (resp && resp.ok) {
+        mensaje.className = 'mensaje exito';
+        mensaje.innerHTML =
+          '<div class="exito-radicado">' +
+            '<div class="exito-titulo">✅ Solicitud radicada exitosamente</div>' +
+            '<div class="exito-numero-label">Su número de radicado es:</div>' +
+            '<div class="exito-numero">#' + resp.radicado + '</div>' +
+            '<div class="exito-info">' +
+              'Guarde este número para consultas posteriores. ' +
+              'Le hemos enviado una copia del formulario al correo registrado.<br><br>' +
+              '<a href="' + resp.urlPDF + '" target="_blank" rel="noopener">📄 Abrir PDF de la radicación</a>' +
+            '</div>' +
+          '</div>';
+        mensaje.hidden = false;
+        form.reset();
+        actualizarSeccionReintegro();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        mostrarError((resp && resp.mensaje) || 'No se pudo procesar la solicitud.');
+      }
+    }
+
+    function onError(err) {
+      setEnviando(false);
+      mostrarError(err && err.message ? err.message : err.toString());
+    }
+
+    function mostrarError(texto) {
+      mensaje.className = 'mensaje error';
+      mensaje.innerHTML = '⚠️ <strong>Error:</strong> ' + texto;
+      mensaje.hidden = false;
+    }
+
+    function setEnviando(activo) {
+      btnEnviar.disabled = activo;
+      btnTexto.hidden = activo;
+      btnLoader.hidden = !activo;
+    }
+
+    // Inicializar
+    actualizarSeccionReintegro();
+  })();
+</script>
