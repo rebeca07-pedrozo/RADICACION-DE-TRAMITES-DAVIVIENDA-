@@ -60,6 +60,12 @@
     letter-spacing: 0.5px;
   }
 
+  logo-imagen {
+    height: 44px;
+    width: auto;
+    border-radius: 6px;
+  }
+
   .cabecera h1 {
     margin: 0 0 2px;
     font-size: 18px;
@@ -297,9 +303,7 @@
     border-radius: 6px;
     display: block;
   }
-  /* ============ FIN SECCIÓN 5 ============ */
 
-  /* RADIOS EN GRILLA */
   .grupo-radios {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -409,7 +413,6 @@
 
   .btn-secundario:hover { background: #f3f4f6; }
 
-  /* MENSAJES */
   .mensaje {
     margin: 0 32px 24px;
     padding: 14px 16px;
@@ -424,7 +427,6 @@
     color: var(--verde-exito);
   }
 
-  /* Bloque de éxito con número de radicado destacado */
   .exito-radicado {
     text-align: center;
     padding: 8px;
@@ -494,7 +496,6 @@
     text-decoration: underline;
   }
 
-  /* RESPONSIVE BÁSICO (modal estrecho) */
   @media (max-width: 640px) {
     .cabecera, form, .aviso, .mensaje { padding-left: 18px; padding-right: 18px; margin-left: 0; margin-right: 0; }
     .fila { flex-direction: column; gap: 0; }

@@ -30,7 +30,6 @@
 
     <form id="formRadicacion" novalidate>
 
-      <!-- ============ SECCIÓN 1: OFICINA ============ -->
       <fieldset>
         <legend>1 · Datos de la oficina solicitante</legend>
 
@@ -46,7 +45,6 @@
         </div>
       </fieldset>
 
-      <!-- ============ SECCIÓN 2: SOLICITANTE ============ -->
       <fieldset>
         <legend>2 · Identificación del solicitante</legend>
 
@@ -66,7 +64,6 @@
           </div>
         </div>
 
-        <!-- 🚨 CAMPO DE CORREO ADAPTADO A TU BASE DE DATOS 🚨 -->
         <div class="campo" style="margin-top: 12px;">
           <label for="emailaddress">Correo electrónico para notificación <span class="req">*</span></label>
           <input type="email" id="emailaddress" name="emailaddress" required placeholder="ejemplo@davivienda.com">
@@ -74,7 +71,6 @@
         </div>
       </fieldset>
 
-      <!-- ============ SECCIÓN 3: SOLICITUD ============ -->
       <fieldset>
         <legend>3 · Tipo de solicitud</legend>
 
@@ -126,7 +122,6 @@
         </div>
       </fieldset>
 
-      <!-- ============ SECCIÓN 4: REINTEGRO (CONDICIONAL) ============ -->
       <fieldset id="seccionReintegro" class="seccion-condicional" hidden>
         <legend>4 · Datos del reintegro</legend>
 
@@ -157,7 +152,6 @@
         <small class="hint">Diligencie una solicitud por cada año a reintegrar. Use punto "." para decimales.</small>
       </fieldset>
 
-      <!-- ============ SECCIÓN 5: SOPORTES ============ -->
       <fieldset class="seccion-soportes">
         <legend>5 · Documentos soporte</legend>
 
@@ -179,7 +173,6 @@
         </div>
       </fieldset>
 
-      <!-- ============ ACCIONES ============ -->
       <div class="acciones">
         <button type="button" id="btnLimpiar" class="btn btn-secundario">Limpiar</button>
         <button type="submit" id="btnEnviar" class="btn btn-primario">

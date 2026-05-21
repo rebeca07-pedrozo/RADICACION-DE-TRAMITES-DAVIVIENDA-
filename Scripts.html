@@ -12,7 +12,6 @@
     const MAX_BYTES = 25 * 1024 * 1024;
     const MOTIVOS_REINTEGRO = ['Reintegro', 'Ambas', 'Desistimiento'];
 
-    // ----- LÓGICA CONDICIONAL: mostrar sección reintegro según motivo -----
     function actualizarSeccionReintegro() {
       const motivo = document.querySelector('input[name="motivo"]:checked');
       const aplica = motivo && MOTIVOS_REINTEGRO.includes(motivo.value);
@@ -30,14 +29,12 @@
       r.addEventListener('change', actualizarSeccionReintegro);
     });
 
-    // ----- LIMPIAR -----
     btnLimpiar.addEventListener('click', () => {
       form.reset();
       mensaje.hidden = true;
       actualizarSeccionReintegro();
     });
 
-    // ----- ENVIAR -----
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       mensaje.hidden = true;
@@ -53,17 +50,14 @@
         const datos = {};
         const fd = new FormData(form);
 
-        // Recolecta campos simples
         fd.forEach((valor, clave) => {
           if (clave === 'soportes' || clave === 'impuestos') return;
           datos[clave] = valor;
         });
 
-        // Checkboxes de impuestos (varios valores)
         const impuestos = fd.getAll('impuestos');
         datos.impuestos = impuestos.join(', ');
 
-        // Archivos
         const archivos = await procesarArchivos(document.getElementById('soportes').files);
 
         google.script.run
@@ -139,7 +133,6 @@
       btnLoader.hidden = !activo;
     }
 
-    // Inicializar
     actualizarSeccionReintegro();
   })();
 </script>
