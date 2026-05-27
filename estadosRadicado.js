@@ -15,33 +15,38 @@ function distribuirSolicitudes() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const HOJA_IMPORT = "IMPORT";
 
-  // Cada hoja destino tiene una lista de textos que la activan.
-  // Si el campo "Impuestos" de IMPORT contiene cualquiera de esos textos, la fila va a esa hoja.
   const CONFIG = [
     {
-      hoja: "Reintegro de retencion de ICA",
+      hoja: "Marcación y Reintegro de retencion de ICA",
       textos: ["Retención de ICA"]
     },
     {
-      hoja: "Reintegro de retencion de renta",
+      hoja: "Marcación y Reintegro de retencion de renta",
       textos: [
         "Retención de Renta",
         "JELPIT",
-        "Propiedad horizontal",   // captura "Propiedad horizontal (rete ICA y retefuente)"
-        "Régimen simple"          // captura "Régimen simple (rete ICA y retefuente)"
+        "Propiedad horizontal",
+        "Régimen simple"
       ]
     },
     {
-      hoja: "Reintegro de retencion de IVA",
+      hoja: "Marcación y Reintegro de retencion de IVA",
       textos: ["Retención de IVA"]
     },
     {
-      hoja: "Reintegro de impuesto IVA",
+      hoja: "Marcación y Reintegro de impuesto IVA",
       textos: ["Impuesto de IVA"]
     }
   ];
 
-  const MOTIVOS_VALIDOS = ["Marcación", "Reintegro", "Ambas"];
+  const MOTIVOS_VALIDOS = [
+    "Marcación",
+    "Reintegro",
+    "Ambas",
+    "Desmarcación",
+    "Certif. Régimen Simple",
+    "Desistimiento"
+  ];
   const ESTADOS_DISPONIBLES = ["RECIBIDO EN PROCESO", "APROBADO", "RECHAZADO", "REQUERIDO"];
   const ESTADO_POR_DEFECTO = "RECIBIDO EN PROCESO";
 
@@ -57,11 +62,10 @@ function distribuirSolicitudes() {
   const encabezadosOriginales = datos[0];
   const filas = datos.slice(1);
 
-  // Construir encabezados finales (con ESTADO en S y OBSERVACIONES en T)
   let nuevosEncabezados = [...encabezadosOriginales];
   while (nuevosEncabezados.length < 18) nuevosEncabezados.push("");
-  nuevosEncabezados[18] = "ESTADO";        // Columna S (índice 18)
-  nuevosEncabezados[19] = "OBSERVACIONES"; // Columna T (índice 19)
+  nuevosEncabezados[18] = "ESTADO";
+  nuevosEncabezados[19] = "OBSERVACIONES";
 
   const encabezadosNormalizados = encabezadosOriginales.map(h => normalizarTexto(h));
   const idxImpuestos = buscarIndice(encabezadosNormalizados, ["impuestos", "tipoimpuesto", "tipodeimpuesto"]);
@@ -71,12 +75,10 @@ function distribuirSolicitudes() {
     throw new Error("No se encontraron las columnas requeridas (Impuestos o Motivo).");
   }
 
-  // ========== PROCESAR CADA HOJA DESTINO ==========
   CONFIG.forEach(cfg => {
 
-    // 1. Leer la hoja destino actual y guardar estado/observaciones por radicado
     let hojaDestino = ss.getSheetByName(cfg.hoja);
-    const estadosGuardados = {}; // { radicadoNormalizado: { estado, observaciones } }
+    const estadosGuardados = {};
 
     if (hojaDestino) {
       const datosDestino = hojaDestino.getDataRange().getValues();
@@ -93,7 +95,6 @@ function distribuirSolicitudes() {
       hojaDestino = ss.insertSheet(cfg.hoja);
     }
 
-    // 2. Construir las filas que SÍ deben estar en esta hoja según IMPORT actual
     const filasNuevas = [];
 
     filas.forEach(fila => {
@@ -101,16 +102,12 @@ function distribuirSolicitudes() {
       if (!MOTIVOS_VALIDOS.includes(motivo)) return;
 
       const impuestosTexto = (fila[idxImpuestos] || "").toString();
-
-      // ¿Esta fila pertenece a esta hoja?
       const perteneceAEstaHoja = cfg.textos.some(t => impuestosTexto.includes(t));
       if (!perteneceAEstaHoja) return;
 
-      // Completar fila hasta columna T
       let filaCompleta = [...fila];
       while (filaCompleta.length < 18) filaCompleta.push("");
 
-      // Buscar si esta fila ya existía → conservar estado y observaciones
       const radClave = normalizarClave(fila[IDX_RADICADO]);
       const guardado = estadosGuardados[radClave];
 
@@ -125,7 +122,6 @@ function distribuirSolicitudes() {
       filasNuevas.push(filaCompleta);
     });
 
-    // 3. Escribir la hoja desde cero (con datos preservados donde corresponde)
     hojaDestino.clearContents();
     hojaDestino.clearFormats();
 
@@ -134,14 +130,12 @@ function distribuirSolicitudes() {
     if (dataFinal.length > 0) {
       hojaDestino.getRange(1, 1, dataFinal.length, dataFinal[0].length).setValues(dataFinal);
 
-      // Formato encabezado
       const rangoHeader = hojaDestino.getRange(1, 1, 1, dataFinal[0].length);
       rangoHeader.setFontWeight("bold")
                  .setBackground("#ED1C27")
                  .setFontColor("white")
                  .setHorizontalAlignment("center");
 
-      // Validación de datos en columna S (Estado) si hay filas
       if (filasNuevas.length > 0) {
         const rangoChips = hojaDestino.getRange(2, 19, filasNuevas.length, 1);
         const reglaEx = SpreadsheetApp.newDataValidation()
@@ -150,7 +144,6 @@ function distribuirSolicitudes() {
           .build();
         rangoChips.setDataValidation(reglaEx);
 
-        // Colores por estado en columna S
         const reglas = [
           SpreadsheetApp.newConditionalFormatRule()
             .whenTextEqualTo("RECIBIDO EN PROCESO")
@@ -171,11 +164,9 @@ function distribuirSolicitudes() {
         ];
         hojaDestino.setConditionalFormatRules(reglas);
 
-        // Columna T (Observaciones) con fondo neutro
         hojaDestino.getRange(2, 20, filasNuevas.length, 1).setBackground("#f9f9f9");
       }
 
-      // Congelar fila de encabezados
       hojaDestino.setFrozenRows(1);
     }
   });
@@ -183,9 +174,6 @@ function distribuirSolicitudes() {
   Logger.log("Distribución completada preservando estados existentes.");
 }
 
-/**
- * Normaliza una clave (radicado) para comparación: quita espacios y ceros a la izquierda.
- */
 function normalizarClave(valor) {
   if (valor === null || valor === undefined) return "";
   let s = valor.toString().trim().toLowerCase();
@@ -209,7 +197,7 @@ function buscarIndice(encabezados, opciones) {
 // =========================================================================
 
 function doGet() {
-  return HtmlService.createHtmlOutputFromFile('Interfaz')
+  return HtmlService.createHtmlOutputFromFile('InterfazEstado')
       .setTitle('Consulta de Estado de Solicitudes')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
@@ -224,10 +212,10 @@ function normalizarBusqueda(valor) {
 function buscarRadicado(textoBusqueda) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const hojasAConsultar = [
-    "Reintegro de retencion de ICA",
-    "Reintegro de retencion de renta",
-    "Reintegro de retencion de IVA",
-    "Reintegro de impuesto IVA"
+    "Marcación y Reintegro de retencion de ICA",
+    "Marcación y Reintegro de retencion de renta",
+    "Marcación y Reintegro de retencion de IVA",
+    "Marcación y Reintegro de impuesto IVA"
   ];
 
   if (!textoBusqueda || !textoBusqueda.toString().trim()) {
@@ -253,7 +241,7 @@ function buscarRadicado(textoBusqueda) {
         coincidencias.push({
           radicado: fila[IDX_RADICADO],
           documento: fila[IDX_DOCUMENTO],
-          impuesto: nombreHoja.replace("Reintegro de ", ""),
+          impuesto: nombreHoja.replace("Marcación y Reintegro de ", ""),
           estado: fila[18] || "RECIBIDO EN PROCESO",
           observaciones: fila[19] || "Sin observaciones registradas."
         });
