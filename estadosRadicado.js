@@ -4,6 +4,10 @@
  * ============================================================================
  */
 
+// 👇 ÍNDICES DE COLUMNAS (0 = columna A, 1 = B, 2 = C...)
+const IDX_RADICADO  = 1; // Columna B
+const IDX_DOCUMENTO = 6; // Columna G
+
 function distribuirSolicitudes() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const HOJA_IMPORT = "IMPORT";
@@ -31,10 +35,9 @@ function distribuirSolicitudes() {
   const encabezadosOriginales = datos[0];
   const filas = datos.slice(1);
 
-  // Crear nuevos encabezados para las hojas destino (R es col 18, S es 19, T es 20)
-  // Aseguramos que los encabezados tengan longitud suficiente hasta la columna T
+  // Crear nuevos encabezados (R = col 18, S = 19, T = 20)
   let nuevosEncabezados = [...encabezadosOriginales];
-  while (nuevosEncabezados.length < 18) nuevosEncabezados.push(""); // Rellenar si tiene menos de R
+  while (nuevosEncabezados.length < 18) nuevosEncabezados.push("");
   nuevosEncabezados[18] = "ESTADO";        // Columna S
   nuevosEncabezados[19] = "OBSERVACIONES"; // Columna T
 
@@ -59,11 +62,10 @@ function distribuirSolicitudes() {
 
     const impuestosTexto = (fila[idxImpuestos] || "").toString();
 
-    // Completar la fila original hasta la columna R (índice 17) para que mantenga estructura
+    // Completar la fila hasta la columna T (índice 19)
     let filaCompleta = [...fila];
     while (filaCompleta.length < 18) filaCompleta.push("");
-    
-    // Añadir Estado inicial y Observación vacía
+
     filaCompleta[18] = ESTADO_POR_DEFECTO; // Columna S
     filaCompleta[19] = "";                 // Columna T
 
@@ -74,7 +76,7 @@ function distribuirSolicitudes() {
     });
   });
 
-  // Escribir hojas destino y aplicar chips descriptivos
+  // Escribir hojas destino
   CONFIG.forEach(cfg => {
     let hojaDestino = ss.getSheetByName(cfg.hoja);
     if (!hojaDestino) hojaDestino = ss.insertSheet(cfg.hoja);
@@ -87,16 +89,14 @@ function distribuirSolicitudes() {
     if (dataFinal.length > 1) {
       hojaDestino.getRange(1, 1, dataFinal.length, dataFinal[0].length).setValues(dataFinal);
 
-      // Crear regla de validación para los Chips Desplegables en la Columna S (desde fila 2)
+      // Chips desplegables en la columna S
       const rangoChips = hojaDestino.getRange(2, 19, dataFinal.length - 1, 1);
       const reglaEx = SpreadsheetApp.newDataValidation()
         .requireValueInList(ESTADOS_DISPONIBLES)
         .setAllowInvalid(false)
         .build();
       rangoChips.setDataValidation(reglaEx);
-      
-      // Aplicar un color sutil (opcional)
-      rangoChips.setBackground("#fff2cc"); 
+      rangoChips.setBackground("#fff2cc");
     }
   });
 
@@ -115,7 +115,7 @@ function buscarIndice(encabezados, opciones) {
 }
 
 // =========================================================================
-// INTERFAZ DE CONSULTA DE RADICADOS (WEB APP)
+// INTERFAZ DE CONSULTA (WEB APP)
 // =========================================================================
 
 function doGet() {
@@ -125,9 +125,23 @@ function doGet() {
 }
 
 /**
- * Función que busca el radicado en todas las hojas destino
+ * Normaliza un valor para comparación:
+ * - Quita espacios
+ * - Quita ceros a la izquierda (0013 = 13)
+ * - Pasa a minúsculas
  */
-function buscarRadicado(numeroRadicado) {
+function normalizarBusqueda(valor) {
+  if (valor === null || valor === undefined) return "";
+  let s = valor.toString().trim().toLowerCase();
+  s = s.replace(/^0+(?=\d)/, "");
+  return s;
+}
+
+/**
+ * Busca por Radicado o por Cédula/NIT en todas las hojas destino.
+ * Devuelve todas las coincidencias.
+ */
+function buscarRadicado(textoBusqueda) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const hojasAConsultar = [
     "Reintegro de retencion de ICA",
@@ -135,33 +149,41 @@ function buscarRadicado(numeroRadicado) {
     "Reintegro de retencion de IVA",
     "Reintegro de impuesto IVA"
   ];
-  
-  if (!numeroRadicado) return { exito: false, mensaje: "Por favor ingresa un radicado válido." };
-  
-  numeroRadicado = numeroRadicado.toString().trim().toLowerCase();
+
+  if (!textoBusqueda || !textoBusqueda.toString().trim()) {
+    return { exito: false, mensaje: "Por favor ingresa un radicado o documento válido." };
+  }
+
+  const busqueda = normalizarBusqueda(textoBusqueda);
+  const coincidencias = [];
 
   for (let nombreHoja of hojasAConsultar) {
     const hoja = ss.getSheetByName(nombreHoja);
     if (!hoja) continue;
-    
+
     const datos = hoja.getDataRange().getValues();
     if (datos.length <= 1) continue;
-    
-    // Suponiendo que el RADICADO está en la Columna A (índice 0)
+
     for (let i = 1; i < datos.length; i++) {
-      let radicadoCelda = (datos[i][0] || "").toString().trim().toLowerCase();
-      
-      if (radicadoCelda === numeroRadicado) {
-        return {
-          exito: true,
-          radicado: datos[i][0],
+      const fila = datos[i];
+      const radicadoCelda  = normalizarBusqueda(fila[IDX_RADICADO]);
+      const documentoCelda = normalizarBusqueda(fila[IDX_DOCUMENTO]);
+
+      if (radicadoCelda === busqueda || documentoCelda === busqueda) {
+        coincidencias.push({
+          radicado: fila[IDX_RADICADO],
+          documento: fila[IDX_DOCUMENTO],
           impuesto: nombreHoja.replace("Reintegro de ", ""),
-          estado: datos[i][18] || "RECIBIDO EN PROCESO",
-          observaciones: datos[i][19] || "Sin observaciones registradas."
-        };
+          estado: fila[18] || "RECIBIDO EN PROCESO",
+          observaciones: fila[19] || "Sin observaciones registradas."
+        });
       }
     }
   }
-  
-  return { exito: false, mensaje: "No se encontró ningún trámite con el número de radicado ingresado." };
+
+  if (coincidencias.length === 0) {
+    return { exito: false, mensaje: "No se encontró ningún trámite con ese radicado o documento." };
+  }
+
+  return { exito: true, resultados: coincidencias };
 }
