@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 80vh; }
+    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 450px; text-align: center; }
+    h2 { color: #2c3e50; margin-bottom: 5px; font-weight: 600; }
+    p.subtitle { color: #7f8c8d; font-size: 14px; margin-bottom: 25px; }
+    .form-group { margin-bottom: 20px; text-align: left; }
+    label { font-size: 12px; font-weight: 600; color: #34495e; text-transform: uppercase; }
+    input[type="text"] { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #dcdde1; border-radius: 6px; box-sizing: border-box; font-size: 16px; transition: 0.3s; }
+    input[type="text"]:focus { border-color: #3498db; outline: none; }
+    button { background-color: #3498db; color: white; border: none; padding: 12px 20px; width: 100%; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+    button:hover { background-color: #2980b9; }
+    .loader { display: none; margin: 20px auto; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    #resultado { margin-top: 25px; padding: 15px; border-radius: 8px; text-align: left; display: none; }
+    .exito { background-color: #e8f4fd; border-left: 5px solid #3498db; }
+    .error { background-color: #fdf2f2; border-left: 5px solid #e74c3c; color: #c0392b; font-size: 14px; }
+    .res-item { margin-bottom: 8px; font-size: 14px; color: #2c3e50; }
+    .badge { display: inline-block; padding: 3px 8px; font-size: 12px; font-weight: 600; border-radius: 4px; color: white; background-color: #f39c12; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>Consulta de Trámites</h2>
+    <p class="subtitle">Ingresa tu número de radicado para ver el estado</p>
+    
+    <div class="form-group">
+      <label for="radicadoInput">Número de Radicado</label>
+      <input type="text" id="radicadoInput" placeholder="Ej: RAD-12345">
+    </div>
+    
+    <button onclick="realizarConsulta()">Buscar Estado</button>
+    
+    <div id="loader" class="loader"></div>
+    <div id="resultado"></div>
+  </div>
+
+  <script>
+    function realizarConsulta() {
+      var radicado = document.getElementById("radicadoInput").value;
+      var loader = document.getElementById("loader");
+      var resultadoDiv = document.getElementById("resultado");
+      
+      if(!radicado.trim()){
+        resultadoDiv.className = "error";
+        resultadoDiv.innerHTML = "Por favor, digita un número de radicado.";
+        resultadoDiv.style.display = "block";
+        return;
+      }
+      
+      loader.style.display = "block";
+      resultadoDiv.style.display = "none";
+      
+      google.script.run
+        .withSuccessHandler(function(res) {
+          loader.style.display = "none";
+          resultadoDiv.style.display = "block";
+          
+          if(res.exito) {
+            resultadoDiv.className = "exito";
+            resultadoDiv.innerHTML = `
+              <div class="res-item"><strong>Radicado:</strong> ${res.radicado}</div>
+              <div class="res-item"><strong>Impuesto:</strong> ${res.impuesto}</div>
+              <div class="res-item"><strong>Estado:</strong> <span class="badge">${res.estado}</span></div>
+              <div class="res-item"><strong>Observaciones:</strong> ${res.observaciones}</div>
+            `;
+          } else {
+            resultadoDiv.className = "error";
+            resultadoDiv.innerHTML = res.mensaje;
+          }
+        })
+        .buscarRadicado(radicado);
+    }
+  </script>
+</body>
+</html>
