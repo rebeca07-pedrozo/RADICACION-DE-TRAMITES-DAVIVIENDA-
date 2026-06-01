@@ -220,7 +220,7 @@ function distribuirSolicitudes() {
 // TRIGGER ONEDIT: detecta cuando alguien selecciona "ENVIAR CORREO"
 // ===========================================================================
 
-function onEdit(e) {
+function alEditarHoja(e) {
   try {
     if (!e || !e.range) return;
 
