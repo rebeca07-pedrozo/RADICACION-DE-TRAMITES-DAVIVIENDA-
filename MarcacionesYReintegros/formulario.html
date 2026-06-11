@@ -29,7 +29,23 @@
     </div>
 
     <form id="formRadicacion" novalidate>
-
+      <fieldset>
+        <legend>1 · Tipo de organización</legend>
+        <div class="campo">
+          <label for="tipoorganizacion">Seleccione la organización <span class="req">*</span></label>
+          <select id="tipoorganizacion" name="tipoorganizacion" required>
+            <option value="">-- Seleccione --</option>
+            <option>Banco Davivienda</option>
+            <option>Davivienda Group</option>
+            <option>Davivienda Capital</option>
+            <option>Renting</option>
+            <option>Datio</option>
+            <option>VC Investments</option>
+            <option>CFD</option>
+            <option>Corporación Davivienda</option>
+          </select>
+        </div>
+      </fieldset>
       <fieldset>
         <legend>1 · Datos de la oficina solicitante</legend>
 
@@ -142,7 +158,9 @@
           </div>
           <div class="campo">
             <label for="valor">Valor a reintegrar <span class="req">*</span></label>
-            <input type="text" id="valor" name="valor" placeholder="1500000.50" pattern="^\d+(\.\d{1,2})?$">
+            <input type="text" id="valor" name="valor"
+                   placeholder="Ej: 1.500.000,50 (opcional)"
+                   inputmode="decimal">
           </div>
           <div class="campo campo-autocomplete">
             <label for="ciudad">Ciudad o municipio <span class="req">*</span></label>
