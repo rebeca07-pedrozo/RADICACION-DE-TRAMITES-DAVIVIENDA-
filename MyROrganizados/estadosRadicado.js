@@ -390,7 +390,7 @@ function construirDatosFormulario(datosFila, nombreHoja) {
 
 function marcarEnviado(sheet, fila, columna) {
   const fecha = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm");
-  sheet.getRange(fila, columna).setValue(`✅ ENVIADO ${fecha}`);
+  sheet.getRange(fila, columna).setValue(`ENVIADO ${fecha}`);
 }
 
 
@@ -498,6 +498,7 @@ function construirCorreoClienteHTML(d) {
 }
 
 
+
 // ============================================================================
 // PLANTILLA HTML — CORREO AL ÁREA REMITIDA (formal/técnico)
 // ============================================================================
@@ -526,7 +527,7 @@ function construirCorreoAreaHTML(d) {
     <table width="640" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.08);">
 
       <!-- Cabecera azul oscuro -->
-      <tr><td style="background:#0f3a6b;padding:22px 32px;color:#fff;">
+      <tr><td style="background:#E1251B;padding:22px 32px;color:#fff;">
         <div style="font-size:11px;letter-spacing:2px;opacity:0.85;">REMISIÓN INTERNA — BANCO DAVIVIENDA</div>
         <div style="font-size:19px;font-weight:bold;margin-top:6px;">Trámite remitido para gestión</div>
       </td></tr>
@@ -604,7 +605,6 @@ function construirCorreoAreaHTML(d) {
 </table>
 </body></html>`;
 }
-
 
 // ============================================================================
 // FUNCIONES AUXILIARES
