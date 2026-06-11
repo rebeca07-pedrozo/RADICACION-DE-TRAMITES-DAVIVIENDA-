@@ -1230,22 +1230,6 @@ function obtenerMunicipios() {
     }
 
     var ss = SpreadsheetApp.openById(idSheet);
-    var hoja = ss.getSheets()[0]; // primera hoja del archivo
-    var ultimaFila = hoja.getLastRow();
-
-    if (ultimaFila < 2) return [];
-
-    // Columna A, desde la fila 2 hasta la última
-    var rango = hoja.getRange(2, 1, ultimaFila - 1, 1).getValues();
-
-    // Aplanar, limpiar vacíos y duplicados, ordenar
-    var municipios = rango
-      .map(function (f) { return (f[0] || "").toString().trim(); })
-      .filter(function (v) { return v !== ""; });
-
-    // Eliminar duplicados conservando el orden de la primera aparición
-    var vistos = {};
-    var unicos = [];
     municipios.forEach(function (m) {
       var clave = m.toLowerCase();
       if (!vistos[clave]) {
