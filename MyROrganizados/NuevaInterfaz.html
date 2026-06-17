@@ -7,75 +7,57 @@
     * { box-sizing: border-box; }
     body {
       font-family: 'Poppins', sans-serif;
-      background-color: #f4f7f6;
-      margin: 0;
-      padding: 30px 20px;
-      min-height: 100vh;
+      background-color: #f4f7f6; margin: 0; padding: 30px 20px; min-height: 100vh;
     }
-    .container { max-width: 1150px; margin: 0 auto; }
+    .container { max-width: 1200px; margin: 0 auto; }
 
-    /* ===== HEADER ===== */
+    /* HEADER */
     .header {
-      display: flex; align-items: center;
-      background: white; border-radius: 10px; overflow: hidden;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08); margin-bottom: 28px;
+      display: flex; align-items: center; background: white; border-radius: 10px;
+      overflow: hidden; box-shadow: 0 6px 20px rgba(0,0,0,0.08); margin-bottom: 28px;
     }
-    .header-logo {
-      min-width: 250px; display: flex; align-items: center;
-      justify-content: center; padding: 18px 22px;
-    }
+    .header-logo { min-width: 250px; display: flex; align-items: center; justify-content: center; padding: 18px 22px; }
     .header-logo img { max-width: 100%; max-height: 55px; display: block; }
     .header-logo-fallback { color: #E1251B; font-weight: 700; font-size: 16px; letter-spacing: 1px; }
-    .header-title {
-      flex: 1; padding: 18px 26px; font-size: 16px; font-weight: 700;
-      color: #2c3e50; letter-spacing: 0.3px; line-height: 1.4;
-    }
+    .header-title { flex: 1; padding: 18px 26px; font-size: 16px; font-weight: 700; color: #2c3e50; line-height: 1.4; }
 
-    /* ===== BIENVENIDA ===== */
+    /* BIENVENIDA */
     .welcome { margin-bottom: 26px; padding: 0 4px; }
     .welcome h1 { margin: 0 0 8px; font-size: 30px; font-weight: 700; color: #1f2937; }
-    .welcome p { margin: 0; font-size: 17px; color: #4b5563; font-weight: 400; }
+    .welcome p { margin: 0; font-size: 17px; color: #4b5563; }
 
-    /* ===== INPUTS ===== */
-    .search-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 16px;
-    }
-    .field label {
-      display: block; font-size: 17px; font-weight: 700; color: #1f2937; margin-bottom: 10px;
-    }
+    /* INPUTS */
+    .search-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 16px; }
+    .field label { display: block; font-size: 17px; font-weight: 700; color: #1f2937; margin-bottom: 10px; }
     .input-wrap {
-      position: relative; background: #fff; border: 1px solid #e2e6ea;
-      border-radius: 10px; overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+      position: relative; background: #fff; border: 1px solid #e2e6ea; border-radius: 10px;
+      overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,0.05);
     }
     .input-wrap .icon {
-      position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
-      width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
-      color: #6b7280; pointer-events: none;
+      position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px;
+      display: flex; align-items: center; justify-content: center; color: #6b7280; pointer-events: none;
     }
     .input-wrap input {
-      width: 100%; padding: 16px 16px 16px 58px; border: none; background: transparent;
-      color: #1f2937; font-size: 15px; font-weight: 600; font-family: 'Poppins', sans-serif; outline: none;
+      width: 100%; padding: 16px 16px 16px 58px; border: none; background: transparent; color: #1f2937;
+      font-size: 15px; font-weight: 600; font-family: 'Poppins', sans-serif; outline: none;
     }
     .input-wrap input::placeholder { color: #9ca3af; font-weight: 600; }
     .input-wrap:focus-within { border-color: #E1251B; box-shadow: 0 0 0 3px rgba(225,37,27,0.12); }
 
-    /* ===== BOTÓN BUSCAR ===== */
+    /* BOTÓN BUSCAR */
     .btn-buscar {
-      width: 100%; background: #E1251B; color: #fff; border: none;
-      padding: 16px; border-radius: 10px; font-size: 16px; font-weight: 700;
-      cursor: pointer; transition: 0.2s; display: flex; align-items: center;
-      justify-content: center; gap: 12px; font-family: 'Poppins', sans-serif;
+      width: 100%; background: #E1251B; color: #fff; border: none; padding: 16px; border-radius: 10px;
+      font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex;
+      align-items: center; justify-content: center; gap: 12px; font-family: 'Poppins', sans-serif;
       box-shadow: 0 5px 14px rgba(225,37,27,0.28); margin-bottom: 30px;
     }
     .btn-buscar:hover { background: #c41f16; transform: translateY(-1px); }
     .btn-buscar svg { width: 22px; height: 22px; }
 
-    /* ===== RESULTADOS ===== */
+    /* RESULTADOS */
     .res-title { font-size: 28px; font-weight: 700; color: #1f2937; margin: 0 0 16px; }
-
     .loader {
-      display: none; margin: 24px auto;
-      border: 4px solid #f3f3f3; border-top: 4px solid #E1251B;
+      display: none; margin: 24px auto; border: 4px solid #f3f3f3; border-top: 4px solid #E1251B;
       border-radius: 50%; width: 38px; height: 38px; animation: spin 1s linear infinite;
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -84,21 +66,24 @@
       background: #fff; border-radius: 10px; box-shadow: 0 5px 16px rgba(0,0,0,0.07);
       overflow-x: auto; margin-bottom: 22px;
     }
-    table.resultados { width: 100%; border-collapse: collapse; min-width: 760px; }
+    table.resultados { width: 100%; border-collapse: collapse; min-width: 880px; }
     table.resultados thead th {
-      background: #fff; color: #1f2937; font-size: 12.5px; font-weight: 700;
-      text-align: left; padding: 16px 14px; border-bottom: 2px solid #f0f0f0;
-      letter-spacing: 0.3px; white-space: nowrap;
+      background: #fff; color: #1f2937; font-size: 12.5px; font-weight: 700; text-align: left;
+      padding: 16px 14px; border-bottom: 2px solid #f0f0f0; letter-spacing: 0.3px; white-space: nowrap;
     }
     table.resultados tbody td {
-      padding: 14px; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6;
-      vertical-align: top;
+      padding: 14px; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6; vertical-align: top;
     }
     table.resultados tbody tr { cursor: pointer; transition: background 0.15s; }
     table.resultados tbody tr:hover { background: #fdf3f2; }
     table.resultados tbody tr.sel { background: #fceae9; }
     .col-sel { width: 44px; text-align: center; }
     .col-sel input { width: 18px; height: 18px; accent-color: #E1251B; cursor: pointer; }
+
+    /* Etiqueta de origen */
+    .tag-origen { display: inline-block; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 5px; white-space: nowrap; }
+    .tag-INTERNO { background: #fde8e7; color: #B81E15; }
+    .tag-EXTERNO { background: #e0edfb; color: #0f3a6b; }
 
     .badge {
       display: inline-block; padding: 5px 12px; font-size: 11.5px; font-weight: 700;
@@ -108,20 +93,20 @@
     .badge-APROBADO  { background-color: #27ae60; }
     .badge-RECHAZADO { background-color: #e74c3c; }
     .badge-REQUERIDO { background-color: #8e44ad; }
+    .badge-VER       { background-color: #607d8b; }
 
     .hint-row td { color: #9ca3af; font-style: italic; padding: 22px 14px; text-align: center; }
     .error-box {
-      padding: 16px 20px; border-radius: 10px; background-color: #fdf2f2;
-      border-left: 5px solid #e74c3c; color: #c0392b; font-size: 14px; font-weight: 500; margin-bottom: 22px;
+      padding: 16px 20px; border-radius: 10px; background-color: #fdf2f2; border-left: 5px solid #e74c3c;
+      color: #c0392b; font-size: 14px; font-weight: 500; margin-bottom: 22px;
     }
 
-    /* ===== BOTÓN FUENTE DE DATOS ===== */
+    /* BOTÓN FUENTE */
     .fuente-zona { text-align: center; }
     .btn-fuente {
-      background: #b9bcc0; color: #1f2937; border: none; padding: 16px 34px;
-      border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer;
-      display: inline-flex; align-items: center; gap: 12px; font-family: 'Poppins', sans-serif;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.12); transition: 0.2s;
+      background: #b9bcc0; color: #1f2937; border: none; padding: 16px 34px; border-radius: 8px;
+      font-size: 15px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center;
+      gap: 12px; font-family: 'Poppins', sans-serif; box-shadow: 0 4px 12px rgba(0,0,0,0.12); transition: 0.2s;
     }
     .btn-fuente:hover:not(:disabled) { background: #a4a8ad; transform: translateY(-1px); }
     .btn-fuente:disabled { opacity: 0.55; cursor: not-allowed; }
@@ -209,16 +194,17 @@
         <thead>
           <tr>
             <th class="col-sel"></th>
+            <th>ORIGEN</th>
             <th>NÚMERO DE RADICADO</th>
             <th>ID</th>
-            <th>TIPO DE IMPUESTO</th>
+            <th>TIPO / FUENTE</th>
             <th>FECHA DE SOLICITUD</th>
             <th>ESTADO ACTUAL</th>
             <th>DETALLES / OBSERVACIONES</th>
           </tr>
         </thead>
         <tbody id="tbodyResultados">
-          <tr class="hint-row"><td colspan="7">Realice una búsqueda para ver los resultados.</td></tr>
+          <tr class="hint-row"><td colspan="8">Realice una búsqueda para ver los resultados.</td></tr>
         </tbody>
       </table>
     </div>
@@ -250,7 +236,7 @@
 
       if (!radicado && !cedula) {
         errorZona.innerHTML = '<div class="error-box">Por favor digite un número de radicado o una cédula/NIT.</div>';
-        tbody.innerHTML = '<tr class="hint-row"><td colspan="7">Realice una búsqueda para ver los resultados.</td></tr>';
+        tbody.innerHTML = '<tr class="hint-row"><td colspan="8">Realice una búsqueda para ver los resultados.</td></tr>';
         return;
       }
 
@@ -267,19 +253,23 @@
             res.resultados.forEach(function(r, i) {
               var estadoStr = (r.estado || "").toString();
               var estadoClase = "badge-RECIBIDO";
-              if (estadoStr.indexOf("APROBADO")  !== -1) estadoClase = "badge-APROBADO";
-              if (estadoStr.indexOf("RECHAZADO") !== -1) estadoClase = "badge-RECHAZADO";
-              if (estadoStr.indexOf("REQUERIDO") !== -1) estadoClase = "badge-REQUERIDO";
+              if (estadoStr.indexOf("APROBADO")    !== -1) estadoClase = "badge-APROBADO";
+              if (estadoStr.indexOf("RECHAZADO")   !== -1) estadoClase = "badge-RECHAZADO";
+              if (estadoStr.indexOf("REQUERIDO")   !== -1) estadoClase = "badge-REQUERIDO";
+              if (estadoStr.indexOf("VER EN FUENTE") !== -1) estadoClase = "badge-VER";
 
+              var origen = (r.origen || "INTERNO");
+              var origenLabel = (origen === "EXTERNO") ? "Externo" : "Davivienda";
               var urlAttr = (r.urlFuente || "").replace(/"/g, "&quot;");
 
               html +=
-                '<tr onclick="seleccionarFila(this, ' + i + ')">' +
-                  '<td class="col-sel"><input type="radio" name="sel" value="' + i + '" ' +
-                       'data-url="' + urlAttr + '"></td>' +
-                  '<td><strong>' + (r.radicado || "") + '</strong></td>' +
+                '<tr onclick="seleccionarFila(this)">' +
+                  '<td class="col-sel"><input type="radio" name="sel" ' +
+                       'data-url="' + urlAttr + '" data-origen="' + origen + '"></td>' +
+                  '<td><span class="tag-origen tag-' + origen + '">' + origenLabel + '</span></td>' +
+                  '<td><strong>' + (r.radicado || "—") + '</strong></td>' +
                   '<td>' + (r.id || "—") + '</td>' +
-                  '<td>' + (r.impuesto || "") + '</td>' +
+                  '<td>' + (r.impuesto || r.fuente || "—") + '</td>' +
                   '<td>' + (r.fecha || "—") + '</td>' +
                   '<td><span class="badge ' + estadoClase + '">' + estadoStr + '</span></td>' +
                   '<td>' + (r.observaciones || "") + '</td>' +
@@ -289,11 +279,10 @@
 
             // Si solo hay un resultado, lo selecciona automáticamente
             if (res.resultados.length === 1) {
-              var primera = tbody.querySelector("tr");
-              seleccionarFila(primera, 0);
+              seleccionarFila(tbody.querySelector("tr"));
             }
           } else {
-            tbody.innerHTML = '<tr class="hint-row"><td colspan="7">' + res.mensaje + '</td></tr>';
+            tbody.innerHTML = '<tr class="hint-row"><td colspan="8">' + res.mensaje + '</td></tr>';
           }
         })
         .withFailureHandler(function(err) {
@@ -304,7 +293,8 @@
         .buscarRadicado(valorBusqueda);
     }
 
-    function seleccionarFila(tr, indice) {
+    function seleccionarFila(tr) {
+      if (!tr) return;
       var filas = document.querySelectorAll("#tbodyResultados tr");
       filas.forEach(function(f){ f.classList.remove("sel"); });
       tr.classList.add("sel");
@@ -319,11 +309,21 @@
         alert("Seleccione primero un resultado de la tabla.");
         return;
       }
+
+      var origen = sel.getAttribute("data-origen");
       var url = sel.getAttribute("data-url");
-      if (!url) {
-        alert("Aún no se ha configurado el ID de la fuente de datos para este tipo de impuesto.");
+
+      // Resultado interno: no hay documento externo que abrir
+      if (origen === "INTERNO") {
+        alert("Este registro corresponde a la gestión interna de Davivienda. Su estado y observaciones ya se muestran en la tabla; no hay documento externo asociado.");
         return;
       }
+
+      if (!url) {
+        alert("Esta fuente no tiene un enlace configurado.");
+        return;
+      }
+
       var win = window.open(url, "_blank");
       if (!win) {
         var a = document.createElement("a");

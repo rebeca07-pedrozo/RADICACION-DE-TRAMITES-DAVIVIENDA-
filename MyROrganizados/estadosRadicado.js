@@ -40,33 +40,33 @@ const HOJAS_DESTINO = [
   "Marcación y Reintegro de impuesto IVA"
 ];
 
-const FUENTES_DATOS = {
-  "Marcación y Reintegro de retencion de ICA": {
-    spreadsheetId: "PEGA_AQUI_ID_FUENTE_ICA",
-    gid: ""
+const FUENTES_EXTERNAS = [
+  {
+    nombre: "Fuente 1",
+    spreadsheetId: "1tRgl2l6P6GmnvPuUKLOuTv3zKGmubg2U_dvA1ODfFXA",
+    pestana: "Consolidado PDFs"
   },
-  "Marcación y Reintegro de retencion de renta": {
-    spreadsheetId: "PEGA_AQUI_ID_FUENTE_RENTA",
-    gid: ""
+  {
+    nombre: "Fuente 2",
+    spreadsheetId: "1iqtzqFaTf_FZg-Cu9weN2K_KGbLV8bhoJncUqc7_AvE",
+    pestana: "Consolidado PDFs"
   },
-  "Marcación y Reintegro de retencion de IVA": {
-    spreadsheetId: "PEGA_AQUI_ID_FUENTE_RETENCION_IVA",
-    gid: ""
-  },
-  "Marcación y Reintegro de impuesto IVA": {
-    spreadsheetId: "PEGA_AQUI_ID_FUENTE_IMPUESTO_IVA",
-    gid: ""
+  {
+    nombre: "Fuente 3",
+    spreadsheetId: "17k_JO_HqvTfJ8-Ns1g_05qpqwKDRoXSY0_CxoDJtNe8",
+    pestana: "Consolidado PDFs"
   }
-};
+];
 
-function urlFuente(nombreHoja) {
-  const cfg = FUENTES_DATOS[nombreHoja];
-  if (!cfg || !cfg.spreadsheetId || cfg.spreadsheetId.indexOf("PEGA_AQUI") === 0) return "";
-  let url = "https://docs.google.com/spreadsheets/d/" + cfg.spreadsheetId + "/edit";
-  if (cfg.gid) url += "#gid=" + cfg.gid;
+// Construye el enlace a un archivo externo (opcionalmente a una pestaña)
+function urlFuenteExterna(spreadsheetId, gid) {
+  if (!spreadsheetId) return "";
+  let url = "https://docs.google.com/spreadsheets/d/" + spreadsheetId + "/edit";
+  if (gid !== undefined && gid !== null && gid !== "") url += "#gid=" + gid;
   return url;
 }
 
+// Busca el índice de una columna por su nombre (tolerante a tildes/mayúsculas)
 function indiceColumnaPorNombre(encabezados, nombres) {
   const norm = encabezados.map(h => normalizarTexto(h));
   for (let n of nombres) {
@@ -693,6 +693,9 @@ function buscarRadicado(textoBusqueda) {
   const busqueda = normalizarBusqueda(textoBusqueda);
   const coincidencias = [];
 
+  // ----------------------------------------------------------------
+  // 1) BÚSQUEDA EN TUS 4 PESTAÑAS INTERNAS (estado + observaciones)
+  // ----------------------------------------------------------------
   for (let nombreHoja of HOJAS_DESTINO) {
     const hoja = ss.getSheetByName(nombreHoja);
     if (!hoja) continue;
@@ -715,17 +718,78 @@ function buscarRadicado(textoBusqueda) {
           : (ts || "").toString();
 
         coincidencias.push({
+          origen:        "INTERNO",
+          fuente:        "Davivienda (interno)",
           radicado:      fila[IDX_RADICADO],
           id:            idxID !== -1 ? fila[idxID] : "",
           impuesto:      nombreHoja.replace("Marcación y Reintegro de ", ""),
           fecha:         fechaStr,
           estado:        fila[IDX_ESTADO] || "RECIBIDO EN PROCESO",
           observaciones: fila[IDX_OBSERVACIONES] || "Sin observaciones registradas.",
-          urlFuente:     urlFuente(nombreHoja)
+          urlFuente:     ""   // lo interno no abre archivo externo
         });
       }
     }
   }
+
+  // ----------------------------------------------------------------
+  // 2) BÚSQUEDA EN LAS FUENTES EXTERNAS (Consolidado PDFs)
+  // ----------------------------------------------------------------
+  FUENTES_EXTERNAS.forEach(fuente => {
+    try {
+      const ssExt = SpreadsheetApp.openById(fuente.spreadsheetId);
+      const hojaExt = ssExt.getSheetByName(fuente.pestana);
+      if (!hojaExt) return;
+
+      const datosExt = hojaExt.getDataRange().getValues();
+      if (datosExt.length <= 1) return;
+
+      const encExt = datosExt[0];
+
+      // Localiza columnas por nombre (tolerante a variantes)
+      const idxRad = indiceColumnaPorNombre(encExt, [
+        "Numero de radicado", "Número de radicado", "No. Radicado", "Radicado"
+      ]);
+      const idxDoc = indiceColumnaPorNombre(encExt, [
+        "Cédula o Nit", "Cedula o Nit", "Cédula/NIT", "Cedula", "Nit", "Documento"
+      ]);
+      const idxID  = indiceColumnaPorNombre(encExt, ["ID"]);
+      const idxTs  = indiceColumnaPorNombre(encExt, ["Timestamp", "Marca temporal", "Fecha"]);
+
+      const gidPestana = hojaExt.getSheetId();
+
+      for (let i = 1; i < datosExt.length; i++) {
+        const fila = datosExt[i];
+        const radCelda = idxRad !== -1 ? normalizarBusqueda(fila[idxRad]) : "";
+        const docCelda = idxDoc !== -1 ? normalizarBusqueda(fila[idxDoc]) : "";
+
+        if ((radCelda && radCelda === busqueda) || (docCelda && docCelda === busqueda)) {
+          let fechaStr = "";
+          if (idxTs !== -1) {
+            const ts = fila[idxTs];
+            fechaStr = ts instanceof Date
+              ? Utilities.formatDate(ts, "America/Bogota", "dd/MM/yyyy")
+              : (ts || "").toString();
+          }
+
+          coincidencias.push({
+            origen:        "EXTERNO",
+            fuente:        fuente.nombre,
+            radicado:      idxRad !== -1 ? fila[idxRad] : "",
+            id:            idxID  !== -1 ? fila[idxID]  : "",
+            impuesto:      fuente.nombre,   // no aplica tipo de impuesto interno
+            fecha:         fechaStr,
+            estado:        "VER EN FUENTE",
+            observaciones: "Registro encontrado en " + fuente.nombre + ". Use el botón para abrir el documento.",
+            urlFuente:     urlFuenteExterna(fuente.spreadsheetId, gidPestana)
+          });
+        }
+      }
+    } catch (err) {
+      // Si un archivo no se puede abrir (permisos/ID), se omite sin romper la búsqueda
+      Logger.log("No se pudo leer " + fuente.nombre + ": " + err.message);
+    }
+  });
 
   if (coincidencias.length === 0) {
     return { exito: false, mensaje: "No se encontró ningún trámite con ese radicado o documento." };
