@@ -40,6 +40,43 @@ const HOJAS_DESTINO = [
   "Marcación y Reintegro de impuesto IVA"
 ];
 
+const FUENTES_DATOS = {
+  "Marcación y Reintegro de retencion de ICA": {
+    spreadsheetId: "PEGA_AQUI_ID_FUENTE_ICA",
+    gid: ""
+  },
+  "Marcación y Reintegro de retencion de renta": {
+    spreadsheetId: "PEGA_AQUI_ID_FUENTE_RENTA",
+    gid: ""
+  },
+  "Marcación y Reintegro de retencion de IVA": {
+    spreadsheetId: "PEGA_AQUI_ID_FUENTE_RETENCION_IVA",
+    gid: ""
+  },
+  "Marcación y Reintegro de impuesto IVA": {
+    spreadsheetId: "PEGA_AQUI_ID_FUENTE_IMPUESTO_IVA",
+    gid: ""
+  }
+};
+
+function urlFuente(nombreHoja) {
+  const cfg = FUENTES_DATOS[nombreHoja];
+  if (!cfg || !cfg.spreadsheetId || cfg.spreadsheetId.indexOf("PEGA_AQUI") === 0) return "";
+  let url = "https://docs.google.com/spreadsheets/d/" + cfg.spreadsheetId + "/edit";
+  if (cfg.gid) url += "#gid=" + cfg.gid;
+  return url;
+}
+
+function indiceColumnaPorNombre(encabezados, nombres) {
+  const norm = encabezados.map(h => normalizarTexto(h));
+  for (let n of nombres) {
+    const i = norm.indexOf(normalizarTexto(n));
+    if (i !== -1) return i;
+  }
+  return -1;
+}
+
+
 const ESTADOS_DISPONIBLES = ["RECIBIDO EN PROCESO", "APROBADO", "RECHAZADO", "REQUERIDO"];
 const NOTIFICAR_OPCIONES  = ["NO ENVIADO", "ENVIAR CORREO"];
 const ESTADO_POR_DEFECTO  = "RECIBIDO EN PROCESO";
@@ -663,18 +700,28 @@ function buscarRadicado(textoBusqueda) {
     const datos = hoja.getDataRange().getValues();
     if (datos.length <= 1) continue;
 
+    const encabezados = datos[0];
+    const idxID = indiceColumnaPorNombre(encabezados, ["ID"]);
+
     for (let i = 1; i < datos.length; i++) {
       const fila = datos[i];
       const radicadoCelda  = normalizarBusqueda(fila[IDX_RADICADO]);
       const documentoCelda = normalizarBusqueda(fila[IDX_DOCUMENTO]);
 
       if (radicadoCelda === busqueda || documentoCelda === busqueda) {
+        const ts = fila[IDX_TIMESTAMP];
+        const fechaStr = ts instanceof Date
+          ? Utilities.formatDate(ts, "America/Bogota", "dd/MM/yyyy")
+          : (ts || "").toString();
+
         coincidencias.push({
-          radicado: fila[IDX_RADICADO],
-          documento: fila[IDX_DOCUMENTO],
-          impuesto: nombreHoja.replace("Marcación y Reintegro de ", ""),
-          estado: fila[IDX_ESTADO] || "RECIBIDO EN PROCESO",
-          observaciones: fila[IDX_OBSERVACIONES] || "Sin observaciones registradas."
+          radicado:      fila[IDX_RADICADO],
+          id:            idxID !== -1 ? fila[idxID] : "",
+          impuesto:      nombreHoja.replace("Marcación y Reintegro de ", ""),
+          fecha:         fechaStr,
+          estado:        fila[IDX_ESTADO] || "RECIBIDO EN PROCESO",
+          observaciones: fila[IDX_OBSERVACIONES] || "Sin observaciones registradas.",
+          urlFuente:     urlFuente(nombreHoja)
         });
       }
     }
