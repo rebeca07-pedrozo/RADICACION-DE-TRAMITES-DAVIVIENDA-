@@ -227,10 +227,22 @@
       e.preventDefault();
       mensaje.hidden = true;
 
-      if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-      }
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    const archivosInput = document.getElementById('soportes');
+    if (!archivosInput.files || archivosInput.files.length === 0) {
+      mensaje.className = 'mensaje error';
+      mensaje.innerHTML = '<strong>Debe adjuntar los documentos requeridos</strong> este es un campo obligatorio.';
+      mensaje.hidden = false;
+      archivosInput.focus();
+      archivosInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    setEnviando(true);
 
       setEnviando(true);
 
