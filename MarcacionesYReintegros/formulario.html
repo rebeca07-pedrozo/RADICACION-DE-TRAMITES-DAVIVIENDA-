@@ -157,7 +157,7 @@
             <input type="number" id="periodo" name="periodo" min="2000" max="2100" placeholder="2024">
           </div>
           <div class="campo">
-            <label for="valor">Valor a reintegrar <span class="req">*</span></label>
+            <label for="valor">Valor a reintegrar</label>
             <input type="text" id="valor" name="valor"
                    placeholder="Ej: 1.500.000,50 (opcional)"
                    inputmode="decimal">
@@ -193,9 +193,9 @@
         </div>
 
         <div class="campo campo-archivos">
-          <label for="soportes">Adjunte los documentos</label>
-          <input type="file" id="soportes" name="soportes" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx">
-          <small class="hint">Puede seleccionar varios archivos. PDF, imágenes, Word o Excel. Máximo 25 MB en total.</small>
+          <label for="soportes">Adjunte los documentos <span class="req">*</span></label>
+          <input type="file" id="soportes" name="soportes" multiple required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx">
+          <small class="hint">Debe adjuntar al menos un documento soporte. PDF, imágenes, Word o Excel. Máximo 25 MB en total.</small>
         </div>
       </fieldset>
 
