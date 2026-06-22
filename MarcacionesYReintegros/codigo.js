@@ -1209,14 +1209,10 @@ function obtenerParametro(parametro) {
   return parametros[parametro];
 
 }
-// ====================================================================
-//  CARGA DE MUNICIPIOS DESDE GOOGLE SHEETS EXTERNO
-// ====================================================================
-
 /**
  * Lee los municipios/ciudades desde el Google Sheet externo configurado
  * en el parámetro "idMunicipiosSheets" de la hoja "Parametros".
- * La información está en la columna A, desde la fila 2 en adelante.
+ * Columna A, desde la fila 2 en adelante.
  *
  * @return {Array<String>} Lista de municipios ordenada alfabéticamente y sin duplicados.
  */
@@ -1230,8 +1226,27 @@ function obtenerMunicipios() {
       return [];
     }
 
-    var ss = SpreadsheetApp.openById(idSheet);
-    municipios.forEach(function (m) {
+    var ssExt = SpreadsheetApp.openById(idSheet);
+    var hoja = ssExt.getSheets()[0]; // primera hoja del archivo externo
+    var ultimaFila = hoja.getLastRow();
+
+    if (ultimaFila < 2) {
+      Logger.log("La hoja de municipios está vacía.");
+      return [];
+    }
+
+    // Leer columna A desde fila 2
+    var rango = hoja.getRange(2, 1, ultimaFila - 1, 1).getValues();
+
+    // Limpiar y filtrar vacíos
+    var listaMunicipios = rango
+      .map(function (f) { return (f[0] || "").toString().trim(); })
+      .filter(function (v) { return v !== ""; });
+
+    // Eliminar duplicados conservando el orden
+    var vistos = {};
+    var unicos = [];
+    listaMunicipios.forEach(function (m) {
       var clave = m.toLowerCase();
       if (!vistos[clave]) {
         vistos[clave] = true;
@@ -1244,6 +1259,7 @@ function obtenerMunicipios() {
       return a.localeCompare(b, 'es', { sensitivity: 'base' });
     });
 
+    Logger.log("✅ Municipios cargados: " + unicos.length);
     return unicos;
 
   } catch (err) {
