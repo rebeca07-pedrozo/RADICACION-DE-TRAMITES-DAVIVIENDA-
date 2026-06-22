@@ -1,14 +1,4 @@
-/**
- * ============================================================================
- * DISTRIBUCIÓN AUTOMÁTICA + NOTIFICACIONES (CLIENTE + ÁREA REMITIDA)
- * ============================================================================
- */
 
-// ============================================================================
-// ÍNDICES DE COLUMNAS (0 = A, 1 = B, 2 = C...)
-// ============================================================================
-
-// Datos del formulario (columnas A-R, vienen del IMPORTRANGE)
 const IDX_TIMESTAMP = 0;  // A
 const IDX_RADICADO  = 1;  // B
 const IDX_ENTIDAD   = 2;  // C  ← NUEVA
@@ -39,6 +29,8 @@ const HOJAS_DESTINO = [
   "Marcación y Reintegro de retencion de IVA",
   "Marcación y Reintegro de impuesto IVA"
 ];
+const MESES_ARCHIVO  = 3;
+const HOJA_HISTORICO = "Histórico Casos Cerrados";
 
 const FUENTES_EXTERNAS = [
   {
@@ -342,7 +334,10 @@ function enviarCorreoCliente(sheet, fila) {
   MailApp.sendEmail({
     to: email,
     subject: `Davivienda — Actualización trámite ${datosCorreo.impuesto} — Radicado ${datosCorreo.radicado}`,
-    htmlBody: html
+    htmlBody: html,
+    name: "Marcaciones y Reintegros - Davivienda",  
+    noReply: true
+
   });
 
   marcarEnviado(sheet, fila, COL_NOTIFICAR);
@@ -384,7 +379,9 @@ function enviarCorreoArea(sheet, fila) {
   MailApp.sendEmail({
     to: correos.join(","),
     subject: `[Remisión Interna] Trámite ${datosCorreo.impuesto} — Radicado ${datosCorreo.radicado}`,
-    htmlBody: html
+    htmlBody: html,
+    name: "Marcaciones y Reintegros - Davivienda",
+    noReply: true
   });
 
   marcarEnviado(sheet, fila, COL_NOTIF_AREA);
@@ -666,10 +663,6 @@ function buscarIndice(encabezados, opciones) {
 }
 
 
-// ============================================================================
-// WEB APP DE CONSULTA
-// ============================================================================
-
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('InterfazEstado')
       .setTitle('Consulta de Estado de Solicitudes')
@@ -694,7 +687,7 @@ function buscarRadicado(textoBusqueda) {
   const coincidencias = [];
 
   // ----------------------------------------------------------------
-  // 1) BÚSQUEDA EN TUS 4 PESTAÑAS INTERNAS (estado + observaciones)
+  // 1) BÚSQUEDA EN HOJAS ACTIVAS (4 operativas)
   // ----------------------------------------------------------------
   for (let nombreHoja of HOJAS_DESTINO) {
     const hoja = ss.getSheetByName(nombreHoja);
@@ -726,14 +719,58 @@ function buscarRadicado(textoBusqueda) {
           fecha:         fechaStr,
           estado:        fila[IDX_ESTADO] || "RECIBIDO EN PROCESO",
           observaciones: fila[IDX_OBSERVACIONES] || "Sin observaciones registradas.",
-          urlFuente:     ""   // lo interno no abre archivo externo
+          urlFuente:     ""
         });
       }
     }
   }
 
   // ----------------------------------------------------------------
-  // 2) BÚSQUEDA EN LAS FUENTES EXTERNAS (Consolidado PDFs)
+  // 2) BÚSQUEDA EN HISTÓRICO (casos archivados internos)
+  // ----------------------------------------------------------------
+  const hojaHist = ss.getSheetByName(HOJA_HISTORICO);
+  if (hojaHist) {
+    const datosHist = hojaHist.getDataRange().getValues();
+    if (datosHist.length > 1) {
+      const encHist = datosHist[0];
+      const idxID_h = indiceColumnaPorNombre(encHist, ["ID"]);
+
+      // El histórico agrega 2 columnas al final: "Origen" (nombre de la hoja) y "Fecha Archivado"
+      const numCols = encHist.length;
+      const idxOrigenHoja = numCols - 2; // penúltima
+
+      for (let i = 1; i < datosHist.length; i++) {
+        const fila = datosHist[i];
+        const radicadoCelda  = normalizarBusqueda(fila[IDX_RADICADO]);
+        const documentoCelda = normalizarBusqueda(fila[IDX_DOCUMENTO]);
+
+        if (radicadoCelda === busqueda || documentoCelda === busqueda) {
+          const ts = fila[IDX_TIMESTAMP];
+          const fechaStr = ts instanceof Date
+            ? Utilities.formatDate(ts, "America/Bogota", "dd/MM/yyyy")
+            : (ts || "").toString();
+
+          const hojaOrigen = (fila[idxOrigenHoja] || "").toString();
+          const impuestoHist = hojaOrigen.replace("Marcación y Reintegro de ", "");
+
+          coincidencias.push({
+            origen:        "INTERNO",
+            fuente:        "Davivienda (histórico archivado)",
+            radicado:      fila[IDX_RADICADO],
+            id:            idxID_h !== -1 ? fila[idxID_h] : "",
+            impuesto:      impuestoHist,
+            fecha:         fechaStr,
+            estado:        fila[IDX_ESTADO] || "",
+            observaciones: fila[IDX_OBSERVACIONES] || "Sin observaciones registradas.",
+            urlFuente:     ""
+          });
+        }
+      }
+    }
+  }
+
+  // ----------------------------------------------------------------
+  // 3) BÚSQUEDA EN LAS FUENTES EXTERNAS (Consolidado PDFs)
   // ----------------------------------------------------------------
   FUENTES_EXTERNAS.forEach(fuente => {
     try {
@@ -777,7 +814,7 @@ function buscarRadicado(textoBusqueda) {
             fuente:        fuente.nombre,
             radicado:      idxRad !== -1 ? fila[idxRad] : "",
             id:            idxID  !== -1 ? fila[idxID]  : "",
-            impuesto:      fuente.nombre,   // no aplica tipo de impuesto interno
+            impuesto:      fuente.nombre,
             fecha:         fechaStr,
             estado:        "VER EN FUENTE",
             observaciones: "Registro encontrado en " + fuente.nombre + ". Use el botón para abrir el documento.",
@@ -786,7 +823,6 @@ function buscarRadicado(textoBusqueda) {
         }
       }
     } catch (err) {
-      // Si un archivo no se puede abrir (permisos/ID), se omite sin romper la búsqueda
       Logger.log("No se pudo leer " + fuente.nombre + ": " + err.message);
     }
   });
@@ -796,4 +832,96 @@ function buscarRadicado(textoBusqueda) {
   }
 
   return { exito: true, resultados: coincidencias };
+}
+
+
+//  Mueve casos APROBADO/RECHAZADO con +3 meses a "Histórico Casos Cerrados"
+const MESES_ARCHIVO  = 3;
+const HOJA_HISTORICO = "Histórico Casos Cerrados";
+
+function archivarCasosCerrados() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ahora = new Date();
+  const limite = new Date(ahora.getFullYear(), ahora.getMonth() - MESES_ARCHIVO, ahora.getDate());
+
+  // Crear o recuperar hoja histórica
+  let hojaHist = ss.getSheetByName(HOJA_HISTORICO);
+  if (!hojaHist) {
+    hojaHist = ss.insertSheet(HOJA_HISTORICO);
+  }
+
+  let totalArchivados = 0;
+
+  HOJAS_DESTINO.forEach(nombreHoja => {
+    const hoja = ss.getSheetByName(nombreHoja);
+    if (!hoja) return;
+
+    const datos = hoja.getDataRange().getValues();
+    if (datos.length <= 1) return;
+
+    const encabezados = datos[0];
+
+    // Inicializar encabezado del histórico si está vacío
+    if (hojaHist.getLastRow() === 0) {
+      const headerHist = [...encabezados, "Origen", "Fecha Archivado"];
+      hojaHist.getRange(1, 1, 1, headerHist.length).setValues([headerHist]);
+      hojaHist.getRange(1, 1, 1, headerHist.length)
+        .setFontWeight("bold")
+        .setBackground("#34495e")
+        .setFontColor("white")
+        .setHorizontalAlignment("center");
+      hojaHist.setFrozenRows(1);
+    }
+
+    const filasAEliminar = [];
+    const filasParaArchivar = [];
+
+    for (let i = 1; i < datos.length; i++) {
+      const fila = datos[i];
+      const estado = (fila[IDX_ESTADO] || "").toString().trim().toUpperCase();
+
+      if (estado !== "APROBADO" && estado !== "RECHAZADO") continue;
+
+      // Determinar fecha de cierre: de NOTIFICAR si tiene fecha, sino del timestamp
+      let fechaCierre = null;
+      const notificar = (fila[IDX_NOTIFICAR] || "").toString();
+      const match = notificar.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+
+      if (match) {
+        fechaCierre = new Date(match[3], parseInt(match[2], 10) - 1, match[1]);
+      } else if (fila[IDX_TIMESTAMP] instanceof Date) {
+        fechaCierre = fila[IDX_TIMESTAMP];
+      }
+
+      if (fechaCierre && fechaCierre < limite) {
+        filasParaArchivar.push([...fila, nombreHoja, new Date()]);
+        filasAEliminar.push(i + 1);
+      }
+    }
+
+    // Pegar al histórico
+    if (filasParaArchivar.length > 0) {
+      const inicio = hojaHist.getLastRow() + 1;
+      hojaHist.getRange(inicio, 1, filasParaArchivar.length, filasParaArchivar[0].length)
+              .setValues(filasParaArchivar);
+    }
+
+    // Eliminar de la hoja operativa (de abajo hacia arriba para no desfasar índices)
+    filasAEliminar.sort((a, b) => b - a).forEach(num => hoja.deleteRow(num));
+
+    totalArchivados += filasParaArchivar.length;
+  });
+
+  Logger.log(`Archivado completado: ${totalArchivados} caso(s) movido(s) al histórico.`);
+  return totalArchivados;
+}
+
+/**
+ * Función manual para correr desde el editor.
+ */
+function archivarAhora() {
+  const total = archivarCasosCerrados();
+  SpreadsheetApp.getUi().alert(
+    `Archivado completado.\n\n${total} caso(s) movido(s) al Histórico.`
+  );
 }

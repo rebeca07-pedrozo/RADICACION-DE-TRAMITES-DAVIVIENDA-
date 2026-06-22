@@ -636,6 +636,7 @@ function enviarNotificacion(respuestas, archivoPDF) {
     subject: asunto,
     body: textoPlano,
     htmlBody: htmlBody,
+    name: "Marcaciones y Reintegros - Davivienda",
     noReply: true
   };
 
