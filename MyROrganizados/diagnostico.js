@@ -1,83 +1,46 @@
 /**
- * FUNCIÓN DE DIAGNÓSTICO TEMPORAL
- * Muestra exactamente qué ve el script para cada fila de IMPORT
+ * ⚠️ SOLO USAR ANTES DEL LANZAMIENTO A PRODUCCIÓN.
+ * Limpia las 4 hojas operativas y el histórico, dejando solo encabezados.
  */
-function diagnosticarRadicado() {
-  const RADICADO_A_BUSCAR = "43"; // ← Cambia este número por el radicado que estás probando
-  
+function limpiarTodoParaProduccion() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const hojaImport = ss.getSheetByName("IMPORT");
-  
-  if (!hojaImport) {
-    Logger.log("❌ No existe la hoja IMPORT");
+  const ui = SpreadsheetApp.getUi();
+
+  // Confirmación de seguridad
+  const respuesta = ui.alert(
+    "⚠️ CONFIRMACIÓN",
+    "Esto va a BORRAR todos los datos de las 4 hojas operativas y del Histórico. ¿Estás segura?",
+    ui.ButtonSet.YES_NO
+  );
+
+  if (respuesta !== ui.Button.YES) {
+    ui.alert("Operación cancelada. No se borró nada.");
     return;
   }
-  
-  const datos = hojaImport.getDataRange().getValues();
-  Logger.log("📊 Total filas en IMPORT (incluido header): " + datos.length);
-  
-  const encabezadosOriginales = datos[0];
-  Logger.log("📋 Encabezados de IMPORT:");
-  encabezadosOriginales.forEach((h, i) => {
-    Logger.log("  [" + i + "] = '" + h + "'");
-  });
-  
-  const encabezadosNormalizados = encabezadosOriginales.map(h => normalizarTexto(h));
-  const idxImpuestos = buscarIndice(encabezadosNormalizados, ["impuestos", "tipoimpuesto", "tipodeimpuesto"]);
-  const idxMotivo    = buscarIndice(encabezadosNormalizados, ["motivo", "motivodelasolicitud", "tipodesolicitud"]);
-  
-  Logger.log("🔍 idxImpuestos = " + idxImpuestos + " | idxMotivo = " + idxMotivo);
-  
-  // Buscar la fila del radicado
-  let filaEncontrada = null;
-  for (let i = 1; i < datos.length; i++) {
-    if ((datos[i][IDX_RADICADO] || "").toString().trim() === RADICADO_A_BUSCAR) {
-      filaEncontrada = datos[i];
-      Logger.log("✅ Fila encontrada en posición " + (i + 1));
-      break;
-    }
-  }
-  
-  if (!filaEncontrada) {
-    Logger.log("❌ No se encontró el radicado " + RADICADO_A_BUSCAR + " en IMPORT");
-    return;
-  }
-  
-  Logger.log("📄 Contenido completo de la fila:");
-  filaEncontrada.forEach((celda, i) => {
-    Logger.log("  [" + i + "] = '" + celda + "'");
-  });
-  
-  const motivo = (filaEncontrada[idxMotivo] || "").toString().trim();
-  const impuestosTexto = (filaEncontrada[idxImpuestos] || "").toString();
-  
-  Logger.log("🎯 Motivo leído: '" + motivo + "'");
-  Logger.log("🎯 Impuestos leído: '" + impuestosTexto + "'");
-  
-  const MOTIVOS_VALIDOS = [
-    "Marcación", "Reintegro", "Ambas",
-    "Desmarcación", "Certif. Régimen Simple", "Certificación Régimen Simple", "Desistimiento"
-  ];
-  
-  Logger.log("✓ ¿Motivo está en lista válida? " + MOTIVOS_VALIDOS.includes(motivo));
-  
-  // Verificar coincidencia con cada hoja
-  const CONFIG = [
-    { hoja: "ICA",   textos: ["Retención de ICA"] },
-    { hoja: "Renta", textos: ["Retención de Renta", "JELPIT", "Propiedad horizontal", "Régimen simple"] },
-    { hoja: "IVA",   textos: ["Retención de IVA"] },
-    { hoja: "ImpIVA",textos: ["Impuesto de IVA"] }
-  ];
-  
-  CONFIG.forEach(cfg => {
-    const coincide = cfg.textos.some(t => impuestosTexto.includes(t));
-    Logger.log("   → " + cfg.hoja + ": " + (coincide ? "✅ DEBE ENTRAR" : "❌ no entra"));
-    if (coincide) {
-      cfg.textos.forEach(t => {
-        if (impuestosTexto.includes(t)) {
-          Logger.log("      ↳ matchea con: '" + t + "'");
-        }
-      });
+
+  let totalLimpiadas = 0;
+
+  // Limpiar las 4 hojas operativas
+  HOJAS_DESTINO.forEach(nombre => {
+    const h = ss.getSheetByName(nombre);
+    if (!h) return;
+    const ultimaFila = h.getLastRow();
+    if (ultimaFila > 1) {
+      h.deleteRows(2, ultimaFila - 1);
+      totalLimpiadas++;
     }
   });
+
+  // Limpiar histórico si existe
+  const hojaHist = ss.getSheetByName(HOJA_HISTORICO);
+  if (hojaHist && hojaHist.getLastRow() > 1) {
+    hojaHist.deleteRows(2, hojaHist.getLastRow() - 1);
+    totalLimpiadas++;
+  }
+
+  ui.alert(
+    "✅ Limpieza completada",
+    `Se limpiaron ${totalLimpiadas} hoja(s).\n\nEl sistema está listo para producción.`,
+    ui.ButtonSet.OK
+  );
 }
