@@ -1259,7 +1259,7 @@ function obtenerMunicipios() {
       return a.localeCompare(b, 'es', { sensitivity: 'base' });
     });
 
-    Logger.log("✅ Municipios cargados: " + unicos.length);
+    Logger.log("Municipios cargados: " + unicos.length);
     return unicos;
 
   } catch (err) {
