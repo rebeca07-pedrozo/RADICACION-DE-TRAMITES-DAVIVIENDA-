@@ -104,7 +104,10 @@ function distribuirSolicitudes() {
 
   const MOTIVOS_VALIDOS = [
     "Marcación", "Reintegro", "Ambas",
-    "Desmarcación", "Certif. Régimen Simple", "Desistimiento"
+    "Desmarcación",
+    "Certif. Régimen Simple",       // versión abreviada (por si acaso)
+    "Certificación Régimen Simple",  // versión completa (la del formulario)
+    "Desistimiento"
   ];
 
   const hojaImport = ss.getSheetByName(HOJA_IMPORT);
