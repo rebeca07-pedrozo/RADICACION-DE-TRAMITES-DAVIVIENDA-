@@ -1085,6 +1085,7 @@ function distribuirSegurosBolivar() {
     filasNuevas.push(f);
   });
 
+  
   hojaDestino.clearContents();
   hojaDestino.clearFormats();
   const dataFinal = [nuevosEncabezados, ...filasNuevas];
@@ -1096,17 +1097,51 @@ function distribuirSegurosBolivar() {
       .setHorizontalAlignment("center");
 
     if (filasNuevas.length > 0) {
-      hojaDestino.getRange(2, COL_SB_ESTADO, filasNuevas.length, 1).setDataValidation(
+      const rEstadoSB = hojaDestino.getRange(2, COL_SB_ESTADO, filasNuevas.length, 1);
+      rEstadoSB.setDataValidation(
         SpreadsheetApp.newDataValidation().requireValueInList(ESTADOS_DISPONIBLES).setAllowInvalid(false).build()
       );
-      hojaDestino.getRange(2, COL_SB_NOTIFICAR, filasNuevas.length, 1).setDataValidation(
+
+      const rNotifSB = hojaDestino.getRange(2, COL_SB_NOTIFICAR, filasNuevas.length, 1);
+      rNotifSB.setDataValidation(
         SpreadsheetApp.newDataValidation().requireValueInList(NOTIFICAR_OPCIONES).setAllowInvalid(true).build()
       );
-      hojaDestino.getRange(2, COL_SB_NOTIF_AREA, filasNuevas.length, 1).setDataValidation(
+
+      const rNotifAreaSB = hojaDestino.getRange(2, COL_SB_NOTIF_AREA, filasNuevas.length, 1);
+      rNotifAreaSB.setDataValidation(
         SpreadsheetApp.newDataValidation().requireValueInList(NOTIFICAR_OPCIONES).setAllowInvalid(true).build()
       );
+
+      const reglasSB = [
+        SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("RECIBIDO EN PROCESO")
+          .setBackground("#fff2cc").setFontColor("#7f6000").setRanges([rEstadoSB]).build(),
+        SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("APROBADO")
+          .setBackground("#d9ead3").setFontColor("#274e13").setRanges([rEstadoSB]).build(),
+        SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("RECHAZADO")
+          .setBackground("#f4cccc").setFontColor("#990000").setRanges([rEstadoSB]).build(),
+        SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("REQUERIDO")
+          .setBackground("#d9d2e9").setFontColor("#20124d").setRanges([rEstadoSB]).build(),
+
+        SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("NO ENVIADO")
+          .setBackground("#f4cccc").setFontColor("#990000").setRanges([rNotifSB]).build(),
+        SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("ENVIAR CORREO")
+          .setBackground("#fce5cd").setFontColor("#783f04").setBold(true).setRanges([rNotifSB]).build(),
+        SpreadsheetApp.newConditionalFormatRule().whenTextContains("ENVIADO ")
+          .setBackground("#d9ead3").setFontColor("#274e13").setRanges([rNotifSB]).build(),
+
+        SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("NO ENVIADO")
+          .setBackground("#f4cccc").setFontColor("#990000").setRanges([rNotifAreaSB]).build(),
+        SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("ENVIAR CORREO")
+          .setBackground("#cfe2f3").setFontColor("#073763").setBold(true).setRanges([rNotifAreaSB]).build(),
+        SpreadsheetApp.newConditionalFormatRule().whenTextContains("ENVIADO ")
+          .setBackground("#d9ead3").setFontColor("#274e13").setRanges([rNotifAreaSB]).build()
+      ];
+      hojaDestino.setConditionalFormatRules(reglasSB);
+
+      hojaDestino.getRange(2, COL_SB_OBSERVACIONES, filasNuevas.length, 1).setBackground("#f9f9f9");
+      hojaDestino.getRange(2, COL_SB_CORREO_AREA,   filasNuevas.length, 1).setBackground("#e3f0fb");
+      hojaDestino.getRange(2, COL_SB_OBSERVAC_AREA, filasNuevas.length, 1).setBackground("#f0f8ff");
     }
-    hojaDestino.setFrozenRows(1);
   }
 
   Logger.log("Distribución Seguros Bolívar completada.");
