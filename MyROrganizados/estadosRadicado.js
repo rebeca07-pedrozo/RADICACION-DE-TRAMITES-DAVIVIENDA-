@@ -382,7 +382,7 @@ function enviarCorreoAreaSB(sheet, fila) {
   const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#eef2f7;font-family:Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#eef2f7;padding:20px 0;"><tr><td align="center">
   <table width="640" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.08);">
-    <tr><td style="background:#0f3a6b;padding:22px 32px;color:#fff;">
+    <tr><td style="background:#008C44;padding:22px 32px;color:#fff;">
       <div style="font-size:11px;letter-spacing:2px;opacity:0.85;">REMISIÓN INTERNA — SEGUROS BOLÍVAR</div>
       <div style="font-size:19px;font-weight:bold;margin-top:6px;">Trámite remitido para gestión</div>
     </td></tr>
@@ -394,13 +394,13 @@ function enviarCorreoAreaSB(sheet, fila) {
       </table>
     </td></tr>
     <tr><td style="padding:0 32px 20px;">
-      <div style="font-size:12px;font-weight:bold;color:#0f3a6b;text-transform:uppercase;margin-bottom:8px;">Instrucciones</div>
-      <div style="padding:14px 18px;background:#eff6ff;border-left:4px solid #2563eb;border-radius:4px;font-size:13.5px;color:#0f172a;line-height:1.6;">
+      <div style="font-size:12px;font-weight:bold;color:#008C44;text-transform:uppercase;margin-bottom:8px;">Instrucciones</div>
+      <div style="padding:14px 18px;background:#eff6ff;border-left:4px solid #88cba9;border-radius:4px;font-size:13.5px;color:#0f172a;line-height:1.6;">
         ${obsArea ? obsArea.toString().replace(/\n/g, "<br>") : "<em>Sin instrucciones específicas.</em>"}
       </div>
     </td></tr>
     <tr><td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:11px;color:#64748b;text-align:center;">
-      Comunicación interna generada automáticamente.<br><strong style="color:#0f3a6b;">Banco Davivienda S.A.</strong>
+      Comunicación interna generada automáticamente.<br><strong style="color:#008C44;">Banco Davivienda S.A.</strong>
     </td></tr>
   </table></td></tr></table></body></html>`;
 
