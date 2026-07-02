@@ -1,6 +1,4 @@
-
-const IDX_FECHA_ATENCION_SB = 1;  // B — Fecha atención (autocompletamos)
-const IDX_RAD_SB            = 2;  // C — Radicado (autocompletamos)
+const IDX_RAD_SB            = 2;  //C 
 const IDX_COD_EXO_SB        = 3;  // D
 const IDX_MUNI_SB           = 4;  // E
 const IDX_TIPONOV_SB        = 5;  // F
@@ -15,11 +13,7 @@ const IDX_NOMBRE_SB         = 13; // N
 const IDX_CONCEPTO_SB       = 14; // O
 const IDX_CORREO_SB         = 15; // P
 
-/**
- * TRIGGER INSTALABLE — "On form submit"
- * ⚠️ No la llames "onFormSubmit" a secas: Google la trata como simple
- * trigger y le bloquea el permiso de enviar correos.
- */
+
 function alRecibirRespuestaSB(e) {
   try {
     const sheet = e.range.getSheet();
@@ -27,19 +21,14 @@ function alRecibirRespuestaSB(e) {
     const numCols = sheet.getLastColumn();
     const datosFila = sheet.getRange(fila, 1, 1, numCols).getValues()[0];
 
-    // 1. Fecha de atención automática (si viene vacía)
-    if (!datosFila[IDX_FECHA_ATENCION_SB]) {
-      sheet.getRange(fila, IDX_FECHA_ATENCION_SB + 1).setValue(new Date());
-    }
-
-    // 2. Radicado automático (si viene vacío)
+    // 1. Radicado automático (si viene vacío)
     let radicado = (datosFila[IDX_RAD_SB] || "").toString().trim();
     if (!radicado) {
       radicado = generarRadicadoSB();
       sheet.getRange(fila, IDX_RAD_SB + 1).setValue(radicado);
     }
 
-    // 3. Enviar correo de confirmación
+    // 2. Enviar correo de confirmación
     const correo = (datosFila[IDX_CORREO_SB] || "").toString().trim();
     if (!correo || correo.indexOf("@") === -1) {
       Logger.log("Radicado " + radicado + ": sin correo válido, no se envía confirmación.");
@@ -87,10 +76,6 @@ function generarRadicadoSB() {
   return "RADICADO-" + siguiente;
 }
 
-/**
- * ⚠️ EJECUTAR UNA SOLA VEZ para arrancar el contador en 336
- * (porque ya existen 336 casos manuales previos). Después no la vuelvas a correr.
- */
 function inicializarContadorSB() {
   PropertiesService.getScriptProperties().setProperty("ultimoRadicadoSB", "336");
   Logger.log("Contador inicializado. El próximo radicado será RADICADO-337.");
