@@ -31,6 +31,13 @@ const HOJAS_DESTINO = [
 ];
 const MESES_ARCHIVO  = 3;
 const HOJA_HISTORICO = "Histórico Casos Cerrados";
+const ID_ARCHIVO_ORGANIZADOS = "1iMuxA6tuLblofgq4wzL-eGTXcssdZjRUdrBSZjDveT0";
+function urlHojaInterna(nombreHoja) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hoja = ss.getSheetByName(nombreHoja);
+  if (!hoja) return "";
+  return "https://docs.google.com/spreadsheets/d/" + ID_ARCHIVO_ORGANIZADOS + "/edit#gid=" + hoja.getSheetId();
+}
 
 const FUENTES_EXTERNAS = [
   {
@@ -788,7 +795,7 @@ function buscarRadicado(textoBusqueda) {
           fecha:         fechaStr,
           estado:        fila[IDX_ESTADO] || "RECIBIDO EN PROCESO",
           observaciones: fila[IDX_OBSERVACIONES] || "Sin observaciones registradas.",
-          urlFuente:     ""
+          urlFuente:     urlHojaInterna(nombreHoja)
         });
       }
     }
@@ -827,7 +834,7 @@ function buscarRadicado(textoBusqueda) {
             fecha:         fechaStr,
             estado:        fila[IDX_ESTADO] || "",
             observaciones: fila[IDX_OBSERVACIONES] || "Sin observaciones registradas.",
-            urlFuente:     ""
+            urlFuente:     urlHojaInterna(HOJA_HISTORICO)
           });
         }
       }
@@ -888,23 +895,27 @@ function buscarRadicado(textoBusqueda) {
     }
   });
   const hojaSB = ss.getSheetByName(HOJA_SB_OPERATIVA);
-  if (hojaSB) {
-    const datosSB = hojaSB.getDataRange().getValues();
-    for (let i = 1; i < datosSB.length; i++) {
-      const fila = datosSB[i];
-      const radCelda = normalizarBusqueda(fila[IDX_SB2_RADICADO]);
-      const docCelda = normalizarBusqueda(fila[IDX_SB2_ID_CLIENTE]);
-      if (radCelda === busqueda || docCelda === busqueda) {
-        coincidencias.push({
-          radicado: fila[IDX_SB2_RADICADO],
-          documento: fila[IDX_SB2_ID_CLIENTE],
-          impuesto: "Seguros Bolívar",
-          estado: fila[IDX_SB_ESTADO] || "RECIBIDO EN PROCESO",
-          observaciones: fila[IDX_SB_OBSERVACIONES] || "Sin observaciones registradas."
-        });
+    if (hojaSB) {
+      const datosSB = hojaSB.getDataRange().getValues();
+      for (let i = 1; i < datosSB.length; i++) {
+        const fila = datosSB[i];
+        const radCelda = normalizarBusqueda(fila[IDX_SB2_RADICADO]);
+        const docCelda = normalizarBusqueda(fila[IDX_SB2_ID_CLIENTE]);
+        if (radCelda === busqueda || docCelda === busqueda) {
+          coincidencias.push({
+            origen:        "INTERNO",
+            fuente:        "Davivienda (Seguros Bolívar)",
+            radicado:      fila[IDX_SB2_RADICADO],
+            id:            fila[IDX_SB2_ID_CLIENTE],
+            impuesto:      "Seguros Bolívar",
+            fecha:         "",
+            estado:        fila[IDX_SB_ESTADO] || "RECIBIDO EN PROCESO",
+            observaciones: fila[IDX_SB_OBSERVACIONES] || "Sin observaciones registradas.",
+            urlFuente:     urlHojaInterna(HOJA_SB_OPERATIVA)
+          });
+        }
       }
     }
-  }
 
   if (coincidencias.length === 0) {
     return { exito: false, mensaje: "No se encontró ningún trámite con ese radicado o documento." };

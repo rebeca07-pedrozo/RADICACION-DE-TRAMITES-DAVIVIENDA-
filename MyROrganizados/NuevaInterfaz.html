@@ -313,11 +313,27 @@
       var origen = sel.getAttribute("data-origen");
       var url = sel.getAttribute("data-url");
 
-      // Resultado interno: no hay documento externo que abrir
-      if (origen === "INTERNO") {
-        alert("Este registro corresponde a la gestión interna de Davivienda. Su estado y observaciones ya se muestran en la tabla; no hay documento externo asociado.");
+    function abrirFuente() {
+      var sel = document.querySelector('input[name="sel"]:checked');
+      if (!sel) {
+        alert("Seleccione primero un resultado de la tabla.");
         return;
       }
+
+      var url = sel.getAttribute("data-url");
+
+      if (!url) {
+        alert("Esta fuente no tiene un enlace configurado.");
+        return;
+      }
+
+      var win = window.open(url, "_blank");
+      if (!win) {
+        var a = document.createElement("a");
+        a.href = url; a.target = "_blank"; a.rel = "noopener";
+        document.body.appendChild(a); a.click(); a.remove();
+      }
+    }
 
       if (!url) {
         alert("Esta fuente no tiene un enlace configurado.");
