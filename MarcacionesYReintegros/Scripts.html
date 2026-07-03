@@ -227,24 +227,118 @@
       e.preventDefault();
       mensaje.hidden = true;
 
-    if (!form.checkValidity()) {
-      form.reportValidity();
+    // Función auxiliar: muestra error, hace scroll, y detiene el envío
+    function mostrarErrorCampo(elemento, textoError) {
+      mensaje.className = 'mensaje error';
+      mensaje.innerHTML = '⚠️ <strong>' + textoError + '</strong>';
+      mensaje.hidden = false;
+      if (elemento) {
+        elemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (typeof elemento.focus === 'function') elemento.focus();
+      }
+    }
+
+    // 1. Tipo de organización
+    const tipoOrg = document.getElementById('tipoorganizacion');
+    if (!tipoOrg.value.trim()) {
+      mostrarErrorCampo(tipoOrg, 'Debe seleccionar el tipo de organización.');
       return;
     }
 
+    // 2. Nombre de oficina
+    const nombreOficina = document.getElementById('nombreoficina');
+    if (!nombreOficina.value.trim()) {
+      mostrarErrorCampo(nombreOficina, 'Debe indicar el nombre de la oficina o dependencia.');
+      return;
+    }
+
+    // 3. Código de oficina
+    const codigoOficina = document.getElementById('codigooficina');
+    if (!codigoOficina.value.trim()) {
+      mostrarErrorCampo(codigoOficina, 'Debe indicar el código de la oficina.');
+      return;
+    }
+
+    // 4. Correo electrónico
+    const emailInput = document.getElementById('emailaddress');
+    const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim());
+    if (!emailValido) {
+      mostrarErrorCampo(emailInput, 'Debe ingresar un correo electrónico válido.');
+      return;
+    }
+
+    // 5. Razón social
+    const razonSocial = document.getElementById('razonsocial');
+    if (!razonSocial.value.trim()) {
+      mostrarErrorCampo(razonSocial, 'Debe indicar el nombre o razón social de la empresa.');
+      return;
+    }
+
+    // 6. Cédula o NIT
+    const cedulaInput = document.getElementById('cedula');
+    if (!cedulaInput.value.trim()) {
+      mostrarErrorCampo(cedulaInput, 'Debe indicar la cédula o NIT.');
+      return;
+    }
+
+    // 7. Motivo de la solicitud
+    const motivoMarcado = document.querySelector('input[name="motivo"]:checked');
+    if (!motivoMarcado) {
+      mostrarErrorCampo(document.querySelector('.grupo-radios'), 'Debe seleccionar un motivo de la solicitud.');
+      return;
+    }
+
+    // 8. Tipo de impuesto (al menos uno)
+    const impuestosMarcados = document.querySelectorAll('input[name="impuestos"]:checked');
+    if (impuestosMarcados.length === 0) {
+      mostrarErrorCampo(document.querySelector('.grupo-checks'), 'Debe seleccionar al menos un tipo de impuesto.');
+      return;
+    }
+
+    // 9. Descripción del motivo
+    const descripcionMotivo = document.getElementById('descripcionmotivo');
+    if (!descripcionMotivo.value.trim()) {
+      mostrarErrorCampo(descripcionMotivo, 'Debe describir el motivo de la solicitud.');
+      return;
+    }
+
+    // 10. Tipo de producto
+    const tipoProducto = document.getElementById('tipoproducto');
+    if (!tipoProducto.value.trim()) {
+      mostrarErrorCampo(tipoProducto, 'Debe seleccionar el tipo de producto.');
+      return;
+    }
+
+    // 11. Número de producto
+    const numeroProducto = document.getElementById('numeroproducto');
+    if (!numeroProducto.value.trim()) {
+      mostrarErrorCampo(numeroProducto, 'Debe indicar el número de producto.');
+      return;
+    }
+
+    // 12 y 13. Año a reintegrar y Ciudad — solo obligatorios si la sección 4 está visible
+    if (!seccionReintegro.hidden) {
+      const periodoInput = document.getElementById('periodo');
+      if (!periodoInput.value.trim()) {
+        mostrarErrorCampo(periodoInput, 'Debe indicar el año a reintegrar.');
+        return;
+      }
+
+      const ciudadInput = document.getElementById('ciudad');
+      if (!ciudadInput.value.trim()) {
+        mostrarErrorCampo(ciudadInput, 'Debe indicar la ciudad o municipio.');
+        return;
+      }
+    }
+
+    // 14. Documentos soporte
     const archivosInput = document.getElementById('soportes');
     if (!archivosInput.files || archivosInput.files.length === 0) {
-      mensaje.className = 'mensaje error';
-      mensaje.innerHTML = '<strong>Debe adjuntar los documentos requeridos</strong> este es un campo obligatorio.';
-      mensaje.hidden = false;
-      archivosInput.focus();
-      archivosInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      mostrarErrorCampo(archivosInput, 'Debe adjuntar al menos un documento soporte.');
       return;
     }
 
     setEnviando(true);
-
-      setEnviando(true);
 
       try {
         const datos = {};
