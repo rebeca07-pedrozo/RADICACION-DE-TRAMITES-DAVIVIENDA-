@@ -521,6 +521,7 @@ function marcarEnviado(sheet, fila, columna) {
 
 
 function construirCorreoClienteHTML(d) {
+  const fechaEnvioStr = Utilities.formatDate(new Date(), "America/Bogota", "dd/MM/yyyy HH:mm");
   const colorEstado = {
     "APROBADO":  "#27ae60",
     "RECHAZADO": "#e74c3c",
@@ -547,9 +548,20 @@ function construirCorreoClienteHTML(d) {
     <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 
       <!-- Cabecera roja -->
-      <tr><td style="background:#E1251B;padding:24px 32px;color:#fff;">
-        <div style="font-size:12px;letter-spacing:1px;opacity:0.9;">BANCO DAVIVIENDA</div>
-        <div style="font-size:20px;font-weight:bold;margin-top:4px;">Actualización de su solicitud</div>
+            <!-- Cabecera roja -->
+      <tr><td style="background:#E1251B;padding:18px 28px;">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td align="left" valign="middle">
+            <table cellpadding="0" cellspacing="0"><tr>
+              <td valign="middle" style="padding-right:10px;"><img src="PEGA_AQUI_EL_LOGO_BASE64" alt="Davivienda" width="26" height="26" style="display:block;"></td>
+              <td valign="middle"><span style="color:#fff;font-size:15px;font-weight:700;letter-spacing:0.5px;">DAVIVIENDA</span></td>
+            </tr></table>
+          </td>
+          <td align="right" valign="middle"><span style="color:#ffffffcc;font-size:12px;">📅 ${fechaEnvioStr}</span></td>
+        </tr></table>
+      </td></tr>
+      <tr><td style="background:#E1251B;padding:0 28px 20px;color:#fff;">
+        <div style="font-size:20px;font-weight:bold;">Actualización de su solicitud</div>
       </td></tr>
 
       <!-- Número de radicado destacado -->
@@ -621,6 +633,7 @@ function construirCorreoClienteHTML(d) {
 
 
 function construirCorreoAreaHTML(d) {
+  const fechaEnvioStr = Utilities.formatDate(new Date(), "America/Bogota", "dd/MM/yyyy HH:mm");
   const fila = (etiqueta, valor) => {
     if (!valor && valor !== 0) return "";
     return `<tr>
@@ -643,12 +656,22 @@ function construirCorreoAreaHTML(d) {
   <tr><td align="center">
     <table width="640" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.08);">
 
-      <!-- Cabecera azul oscuro -->
-      <tr><td style="background:#E1251B;padding:22px 32px;color:#fff;">
-        <div style="font-size:11px;letter-spacing:2px;opacity:0.85;">REMISIÓN INTERNA — BANCO DAVIVIENDA</div>
-        <div style="font-size:19px;font-weight:bold;margin-top:6px;">Trámite remitido para gestión</div>
+      <!-- Cabecera roja -->
+      <tr><td style="background:#E1251B;padding:18px 28px;">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td align="left" valign="middle">
+            <table cellpadding="0" cellspacing="0"><tr>
+              <td valign="middle" style="padding-right:10px;"><img src="PEGA_AQUI_EL_LOGO_BASE64" alt="Davivienda" width="26" height="26" style="display:block;"></td>
+              <td valign="middle"><span style="color:#fff;font-size:15px;font-weight:700;letter-spacing:0.5px;">DAVIVIENDA</span></td>
+            </tr></table>
+          </td>
+          <td align="right" valign="middle"><span style="color:#ffffffcc;font-size:12px;">📅 ${fechaEnvioStr}</span></td>
+        </tr></table>
       </td></tr>
-
+      <tr><td style="background:#E1251B;padding:0 28px 20px;color:#fff;">
+        <div style="font-size:11px;letter-spacing:2px;opacity:0.85;">REMISIÓN INTERNA</div>
+        <div style="font-size:19px;font-weight:bold;margin-top:4px;">Trámite remitido para gestión</div>
+      </td></tr>
       <!-- Aviso -->
       <tr><td style="padding:20px 32px 10px;">
         <div style="padding:14px 18px;background:#fff7ed;border-left:4px solid #ea580c;border-radius:4px;font-size:13px;color:#7c2d12;line-height:1.6;">
