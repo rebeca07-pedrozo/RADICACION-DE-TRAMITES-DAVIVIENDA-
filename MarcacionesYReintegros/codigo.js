@@ -649,7 +649,7 @@ function enviarNotificacion(respuestas, archivoPDF) {
 }
 
 function construirCorreoHTML(datos) {
-
+  var fechaEnvioStr = Utilities.formatDate(new Date(), "America/Bogota", "dd/MM/yyyy HH:mm");
   var fila = function(etiqueta, valor) {
 
     if (!valor) return "";
@@ -680,12 +680,20 @@ function construirCorreoHTML(datos) {
 
         // Cabecera roja
 
-        '<tr><td style="background:#E1251B;padding:24px 32px;color:#fff;">' +
-
-          '<div style="font-size:12px;letter-spacing:1px;opacity:0.9;">BANCO DAVIVIENDA</div>' +
-
-          '<div style="font-size:20px;font-weight:bold;margin-top:4px;">Solicitud radicada exitosamente</div>' +
-
+        // Cabecera roja
+        '<tr><td style="background:#E1251B;padding:18px 28px;">' +
+          '<table width="100%" cellpadding="0" cellspacing="0"><tr>' +
+            '<td align="left" valign="middle">' +
+              '<table cellpadding="0" cellspacing="0"><tr>' +
+                '<td valign="middle" style="padding-right:10px;"><img src="PEGA_AQUI_EL_LOGO_BASE64" alt="Davivienda" width="26" height="26" style="display:block;"></td>' +
+                '<td valign="middle"><span style="color:#fff;font-size:15px;font-weight:700;letter-spacing:0.5px;">DAVIVIENDA</span></td>' +
+              '</tr></table>' +
+            '</td>' +
+            '<td align="right" valign="middle"><span style="color:#ffffffcc;font-size:12px;">📅 ' + fechaEnvioStr + '</span></td>' +
+          '</tr></table>' +
+        '</td></tr>' +
+        '<tr><td style="background:#E1251B;padding:0 28px 20px;color:#fff;">' +
+          '<div style="font-size:20px;font-weight:bold;">Solicitud radicada exitosamente</div>' +
         '</td></tr>' +
 
 
