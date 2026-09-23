@@ -679,8 +679,6 @@ function construirCorreoHTML(datos) {
 
 
         // Cabecera roja
-
-        // Cabecera roja
         '<tr><td style="background:#E1251B;padding:18px 28px;">' +
           '<table width="100%" cellpadding="0" cellspacing="0"><tr>' +
             '<td align="left" valign="middle">' +
