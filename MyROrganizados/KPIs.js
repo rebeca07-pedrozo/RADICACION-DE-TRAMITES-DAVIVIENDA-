@@ -28,7 +28,6 @@ const ENCABEZADOS_KPIS = [
   "ORG_Activos_Renta",
   "ORG_Activos_IVA",
   "ORG_Activos_ImpuestoIVA",
-  "ORG_Activos_SegurosBolivar",
   "ORG_Total_Activos",
   "ORG_Estado_RecibidoEnProceso",
   "ORG_Estado_Aprobado",
@@ -82,7 +81,6 @@ function calcularYRegistrarKPIs() {
     kpisOrganizados.activosPorHoja["Renta"] || 0,
     kpisOrganizados.activosPorHoja["IVA"] || 0,
     kpisOrganizados.activosPorHoja["ImpuestoIVA"] || 0,
-    kpisOrganizados.activosSegurosBolivar,
     kpisOrganizados.totalActivos,
     kpisOrganizados.porEstado["RECIBIDO EN PROCESO"] || 0,
     kpisOrganizados.porEstado["APROBADO"] || 0,
@@ -155,13 +153,11 @@ function calcularKpisFormulario(ss) {
 }
 
 /**
- * Calcula KPIs operativos a partir de las hojas de Marcaciones, Seguros
- * Bolívar y el Histórico.
+ * Calcula KPIs operativos a partir de las hojas de Marcaciones y el Histórico.
  */
 function calcularKpisOrganizados(ss) {
   const resultado = {
     activosPorHoja: {},
-    activosSegurosBolivar: 0,
     totalActivos: 0,
     porEstado: {
       "RECIBIDO EN PROCESO": 0,
@@ -216,31 +212,6 @@ function calcularKpisOrganizados(ss) {
     resultado.totalActivos += contador;
   });
 
-  const hojaSB = ss.getSheetByName(HOJA_SB_OPERATIVA);
-  if (hojaSB) {
-    const datosSB = hojaSB.getDataRange().getValues();
-    for (let i = 1; i < datosSB.length; i++) {
-      const fila = datosSB[i];
-      const radicado = (fila[IDX_SB2_RADICADO] || "").toString().trim();
-      if (!radicado) continue;
-
-      resultado.activosSegurosBolivar++;
-      resultado.totalActivos++;
-
-      const estado = (fila[IDX_SB_ESTADO] || "").toString().trim().toUpperCase();
-      if (resultado.porEstado.hasOwnProperty(estado)) {
-        resultado.porEstado[estado]++;
-      }
-
-      const notif = (fila[IDX_SB_NOTIFICAR] || "").toString().trim();
-      if (notif === "NO ENVIADO") resultado.pendientesNotificarCliente++;
-
-      const notifArea = (fila[IDX_SB_NOTIF_AREA] || "").toString().trim();
-      const correoArea = (fila[IDX_SB_CORREO_AREA] || "").toString().trim();
-      if (correoArea && notifArea === "NO ENVIADO") resultado.pendientesNotificarArea++;
-    }
-  }
-
   const hojaHist = ss.getSheetByName(HOJA_HISTORICO);
   if (hojaHist) {
     const datosHist = hojaHist.getDataRange().getValues();
@@ -271,11 +242,9 @@ function calcularKpisOrganizados(ss) {
 function incrementarContadorConsultas() {
   const props = PropertiesService.getScriptProperties();
 
-  // Total acumulado
   const totalActual = parseInt(props.getProperty("consultasTotal") || "0", 10);
   props.setProperty("consultasTotal", (totalActual + 1).toString());
 
-  // Contador de hoy (se resetea si cambió el día)
   const hoyStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy");
   const fechaGuardada = props.getProperty("consultasHoyFecha");
 

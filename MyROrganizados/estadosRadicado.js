@@ -756,6 +756,7 @@ function normalizarBusqueda(valor) {
 }
 
 function buscarRadicado(textoBusqueda) {
+  incrementarContadorConsultas(); 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   if (!textoBusqueda || !textoBusqueda.toString().trim()) {
