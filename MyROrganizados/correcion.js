@@ -1,8 +1,302 @@
-//  EDITA AQUÍ
-// Es lo que está entre /d/ y /view en el link de compartir de la imagen
-const ID_LOGO_CORREOS = "PEGA_AQUI_EL_ID_CORTO_DEL_LOGO";
+const IDX_TIMESTAMP = 0;  // A
+const IDX_RADICADO  = 1;  // B
+const IDX_ENTIDAD   = 2;  // C  ← NUEVA
+const IDX_EMAIL     = 3;  // D  ← (antes era C)
+const IDX_DOCUMENTO = 7;  // H  ← (antes era G)
 
-//enviarCorreoCliente (reemplázala completa)
+// Columnas operativas para CLIENTE: S, T, U
+const COL_ESTADO        = 19; // S
+const COL_OBSERVACIONES = 20; // T
+const COL_NOTIFICAR     = 21; // U
+
+// Columnas operativas para ÁREA REMITIDA: V, W, X (nuevas)
+const COL_CORREO_AREA    = 22; // V
+const COL_OBSERVAC_AREA  = 23; // W
+const COL_NOTIF_AREA     = 24; // X
+
+// Índices en array (col-1) para lectura
+const IDX_ESTADO         = COL_ESTADO - 1;        // 18
+const IDX_OBSERVACIONES  = COL_OBSERVACIONES - 1; // 19
+const IDX_NOTIFICAR      = COL_NOTIFICAR - 1;     // 20
+const IDX_CORREO_AREA    = COL_CORREO_AREA - 1;   // 21
+const IDX_OBSERVAC_AREA  = COL_OBSERVAC_AREA - 1; // 22
+const IDX_NOTIF_AREA     = COL_NOTIF_AREA - 1;    // 23
+
+const HOJAS_DESTINO = [
+  "Marcación y Reintegro de retencion de ICA",
+  "Marcación y Reintegro de retencion de renta",
+  "Marcación y Reintegro de retencion de IVA",
+  "Marcación y Reintegro de impuesto IVA"
+];
+const MESES_ARCHIVO  = 3;
+const HOJA_HISTORICO = "Histórico Casos Cerrados";
+const ID_ARCHIVO_ORGANIZADOS = "1iMuxA6tuLblofgq4wzL-eGTXcssdZjRUdrBSZjDveT0";
+
+function urlHojaInterna(nombreHoja) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hoja = ss.getSheetByName(nombreHoja);
+  if (!hoja) return "";
+  return "https://docs.google.com/spreadsheets/d/" + ID_ARCHIVO_ORGANIZADOS + "/edit#gid=" + hoja.getSheetId();
+}
+
+const FUENTES_EXTERNAS = [
+  {
+    nombre: "Fuente 1",
+    spreadsheetId: "1tRgl2l6P6GmnvPuUKLOuTv3zKGmubg2U_dvA1ODfFXA",
+    pestana: "Consolidado PDFs"
+  },
+  {
+    nombre: "Fuente 2",
+    spreadsheetId: "1iqtzqFaTf_FZg-Cu9weN2K_KGbLV8bhoJncUqc7_AvE",
+    pestana: "Consolidado PDFs"
+  },
+  {
+    nombre: "Fuente 3",
+    spreadsheetId: "17k_JO_HqvTfJ8-Ns1g_05qpqwKDRoXSY0_CxoDJtNe8",
+    pestana: "Consolidado PDFs"
+  }
+];
+
+function urlFuenteExterna(spreadsheetId, gid) {
+  if (!spreadsheetId) return "";
+  let url = "https://docs.google.com/spreadsheets/d/" + spreadsheetId + "/edit";
+  if (gid !== undefined && gid !== null && gid !== "") url += "#gid=" + gid;
+  return url;
+}
+
+function indiceColumnaPorNombre(encabezados, nombres) {
+  const norm = encabezados.map(h => normalizarTexto(h));
+  for (let n of nombres) {
+    const i = norm.indexOf(normalizarTexto(n));
+    if (i !== -1) return i;
+  }
+  return -1;
+}
+
+const ESTADOS_DISPONIBLES = ["RECIBIDO EN PROCESO", "APROBADO", "RECHAZADO", "REQUERIDO"];
+const NOTIFICAR_OPCIONES  = ["NO ENVIADO", "ENVIAR CORREO"];
+const ESTADO_POR_DEFECTO  = "RECIBIDO EN PROCESO";
+const NOTIFICAR_DEFECTO   = "NO ENVIADO";
+
+
+// ============================================================================
+// DISTRIBUIR SOLICITUDES
+// ============================================================================
+
+function distribuirSolicitudes() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const HOJA_IMPORT = "IMPORT";
+
+  const CONFIG = [
+    {
+      hoja: "Marcación y Reintegro de retencion de ICA",
+      textos: ["Retención de ICA"]
+    },
+    {
+      hoja: "Marcación y Reintegro de retencion de renta",
+      textos: ["Retención de Renta", "JELPIT", "Propiedad horizontal", "Régimen simple"]
+    },
+    {
+      hoja: "Marcación y Reintegro de retencion de IVA",
+      textos: ["Retención de IVA"]
+    },
+    {
+      hoja: "Marcación y Reintegro de impuesto IVA",
+      textos: ["Impuesto de IVA"]
+    }
+  ];
+
+  const MOTIVOS_VALIDOS = [
+    "Marcación", "Reintegro", "Ambas",
+    "Desmarcación",
+    "Certif. Régimen Simple",
+    "Certificación Régimen Simple",
+    "Desistimiento"
+  ];
+
+  const hojaImport = ss.getSheetByName(HOJA_IMPORT);
+  if (!hojaImport) throw new Error(`No existe la hoja '${HOJA_IMPORT}'`);
+
+  const datos = hojaImport.getDataRange().getValues();
+  if (datos.length <= 1) return;
+
+  const encabezadosOriginales = datos[0];
+  const filas = datos.slice(1);
+
+  let nuevosEncabezados = [...encabezadosOriginales];
+  while (nuevosEncabezados.length < IDX_ESTADO) nuevosEncabezados.push("");
+  nuevosEncabezados[IDX_ESTADO]        = "ESTADO";
+  nuevosEncabezados[IDX_OBSERVACIONES] = "OBSERVACIONES";
+  nuevosEncabezados[IDX_NOTIFICAR]     = "NOTIFICAR";
+  nuevosEncabezados[IDX_CORREO_AREA]   = "CORREO_AREA";
+  nuevosEncabezados[IDX_OBSERVAC_AREA] = "OBSERVACIONES_AREA";
+  nuevosEncabezados[IDX_NOTIF_AREA]    = "NOTIFICAR_AREA";
+
+  const encabezadosNormalizados = encabezadosOriginales.map(h => normalizarTexto(h));
+  const idxImpuestos = buscarIndice(encabezadosNormalizados, ["impuestos", "tipoimpuesto", "tipodeimpuesto"]);
+  const idxMotivo    = buscarIndice(encabezadosNormalizados, ["motivo", "motivodelasolicitud", "tipodesolicitud"]);
+
+  if (idxImpuestos === -1 || idxMotivo === -1) {
+    throw new Error("No se encontraron las columnas 'Impuestos' o 'Motivo' en IMPORT.");
+  }
+
+  CONFIG.forEach(cfg => {
+    let hojaDestino = ss.getSheetByName(cfg.hoja);
+    const guardados = {};
+
+    if (hojaDestino) {
+      const datosDestino = hojaDestino.getDataRange().getValues();
+      for (let i = 1; i < datosDestino.length; i++) {
+        const rad = normalizarClave(datosDestino[i][IDX_RADICADO]);
+        if (rad) {
+          guardados[rad] = {
+            estado:        datosDestino[i][IDX_ESTADO]        || ESTADO_POR_DEFECTO,
+            observaciones: datosDestino[i][IDX_OBSERVACIONES] || "",
+            notificar:     datosDestino[i][IDX_NOTIFICAR]     || NOTIFICAR_DEFECTO,
+            correoArea:    datosDestino[i][IDX_CORREO_AREA]    || "",
+            observAreas:   datosDestino[i][IDX_OBSERVAC_AREA]  || "",
+            notifArea:     datosDestino[i][IDX_NOTIF_AREA]     || NOTIFICAR_DEFECTO
+          };
+        }
+      }
+    } else {
+      hojaDestino = ss.insertSheet(cfg.hoja);
+    }
+
+    const filasNuevas = [];
+
+    filas.forEach(fila => {
+      const motivo = (fila[idxMotivo] || "").toString().trim();
+      if (!MOTIVOS_VALIDOS.includes(motivo)) return;
+
+      const impuestosTexto = (fila[idxImpuestos] || "").toString();
+      if (!cfg.textos.some(t => impuestosTexto.includes(t))) return;
+
+      let f = [...fila];
+      while (f.length < IDX_ESTADO) f.push("");
+
+      const radClave = normalizarClave(fila[IDX_RADICADO]);
+      const g = guardados[radClave];
+
+      if (g) {
+        f[IDX_ESTADO]        = g.estado;
+        f[IDX_OBSERVACIONES] = g.observaciones;
+        f[IDX_NOTIFICAR]     = g.notificar;
+        f[IDX_CORREO_AREA]   = g.correoArea;
+        f[IDX_OBSERVAC_AREA] = g.observAreas;
+        f[IDX_NOTIF_AREA]    = g.notifArea;
+      } else {
+        f[IDX_ESTADO]        = ESTADO_POR_DEFECTO;
+        f[IDX_OBSERVACIONES] = "";
+        f[IDX_NOTIFICAR]     = NOTIFICAR_DEFECTO;
+        f[IDX_CORREO_AREA]   = "";
+        f[IDX_OBSERVAC_AREA] = "";
+        f[IDX_NOTIF_AREA]    = NOTIFICAR_DEFECTO;
+      }
+
+      filasNuevas.push(f);
+    });
+
+    hojaDestino.clearContents();
+    hojaDestino.clearFormats();
+
+    const dataFinal = [nuevosEncabezados, ...filasNuevas];
+
+    if (dataFinal.length > 0) {
+      hojaDestino.getRange(1, 1, dataFinal.length, dataFinal[0].length).setValues(dataFinal);
+
+      hojaDestino.getRange(1, 1, 1, dataFinal[0].length)
+        .setFontWeight("bold").setBackground("#ED1C27").setFontColor("white")
+        .setHorizontalAlignment("center");
+
+      if (filasNuevas.length > 0) {
+        aplicarValidacionesYFormatos(hojaDestino, filasNuevas.length);
+      }
+
+      hojaDestino.setFrozenRows(1);
+    }
+  });
+
+  Logger.log("Distribución completada.");
+}
+
+function aplicarValidacionesYFormatos(hoja, numFilas) {
+  const rEstado = hoja.getRange(2, COL_ESTADO, numFilas, 1);
+  rEstado.setDataValidation(
+    SpreadsheetApp.newDataValidation().requireValueInList(ESTADOS_DISPONIBLES).setAllowInvalid(false).build()
+  );
+
+  const rNotif = hoja.getRange(2, COL_NOTIFICAR, numFilas, 1);
+  rNotif.setDataValidation(
+    SpreadsheetApp.newDataValidation().requireValueInList(NOTIFICAR_OPCIONES).setAllowInvalid(true).build()
+  );
+
+  const rNotifArea = hoja.getRange(2, COL_NOTIF_AREA, numFilas, 1);
+  rNotifArea.setDataValidation(
+    SpreadsheetApp.newDataValidation().requireValueInList(NOTIFICAR_OPCIONES).setAllowInvalid(true).build()
+  );
+
+  const reglas = [
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("RECIBIDO EN PROCESO")
+      .setBackground("#fff2cc").setFontColor("#7f6000").setRanges([rEstado]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("APROBADO")
+      .setBackground("#d9ead3").setFontColor("#274e13").setRanges([rEstado]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("RECHAZADO")
+      .setBackground("#f4cccc").setFontColor("#990000").setRanges([rEstado]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("REQUERIDO")
+      .setBackground("#d9d2e9").setFontColor("#20124d").setRanges([rEstado]).build(),
+
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("NO ENVIADO")
+      .setBackground("#f4cccc").setFontColor("#990000").setRanges([rNotif]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("ENVIAR CORREO")
+      .setBackground("#fce5cd").setFontColor("#783f04").setBold(true).setRanges([rNotif]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenTextContains("ENVIADO ")
+      .setBackground("#d9ead3").setFontColor("#274e13").setRanges([rNotif]).build(),
+
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("NO ENVIADO")
+      .setBackground("#f4cccc").setFontColor("#990000").setRanges([rNotifArea]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("ENVIAR CORREO")
+      .setBackground("#cfe2f3").setFontColor("#073763").setBold(true).setRanges([rNotifArea]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenTextContains("ENVIADO ")
+      .setBackground("#d9ead3").setFontColor("#274e13").setRanges([rNotifArea]).build()
+  ];
+  hoja.setConditionalFormatRules(reglas);
+
+  hoja.getRange(2, COL_OBSERVACIONES, numFilas, 1).setBackground("#f9f9f9");
+  hoja.getRange(2, COL_CORREO_AREA,    numFilas, 1).setBackground("#e3f0fb");
+  hoja.getRange(2, COL_OBSERVAC_AREA,  numFilas, 1).setBackground("#f0f8ff");
+}
+
+
+// ============================================================================
+// DISPARADOR DE EDICIÓN (CORREGIDO PARA TODAS LAS HOJAS DE DESTINO)
+// ============================================================================
+
+function alEditarHoja(e) {
+  try {
+    if (!e || !e.range) return;
+    const sheet = e.range.getSheet();
+    const nombreHoja = sheet.getName();
+    const col = e.range.getColumn();
+    const fila = e.range.getRow();
+    if (fila < 2) return;
+
+    const valorNuevo = (e.value || "").toString().trim();
+    if (valorNuevo !== "ENVIAR CORREO") return;
+
+    // Verifica que la hoja esté incluida dentro del array general de HOJAS_DESTINO
+    if (HOJAS_DESTINO.indexOf(nombreHoja) !== -1) {
+      if (col === COL_NOTIFICAR)  { enviarCorreoCliente(sheet, fila); return; }
+      if (col === COL_NOTIF_AREA) { enviarCorreoArea(sheet, fila);    return; }
+    }
+
+  } catch (err) {
+    Logger.log("Error en alEditarHoja: " + err.message);
+    try { e.range.setNote("Error: " + err.message); } catch (_) {}
+  }
+}
+
+
 function enviarCorreoCliente(sheet, fila) {
   const datosFila = sheet.getRange(fila, 1, 1, COL_NOTIF_AREA).getValues()[0];
   const nombreHoja = sheet.getName();
@@ -18,7 +312,6 @@ function enviarCorreoCliente(sheet, fila) {
   datosCorreo.observaciones = datosFila[IDX_OBSERVACIONES];
 
   const html = construirCorreoClienteHTML(datosCorreo);
-  const logoBlob = DriveApp.getFileById(ID_LOGO_CORREOS).getBlob().setName("logoDavivienda");
 
   GmailApp.sendEmail(
     email,
@@ -27,15 +320,13 @@ function enviarCorreoCliente(sheet, fila) {
     {
       htmlBody: html,
       name: "Marcaciones y Reintegros - Davivienda",
-      noReply: true,
-      inlineImages: { logoDavivienda: logoBlob }
+      noReply: true
     }
   );
 
   marcarEnviado(sheet, fila, COL_NOTIFICAR);
 }
 
-//enviarCorreoArea 
 function enviarCorreoArea(sheet, fila) {
   const datosFila = sheet.getRange(fila, 1, 1, COL_NOTIF_AREA).getValues()[0];
   const nombreHoja = sheet.getName();
@@ -62,7 +353,6 @@ function enviarCorreoArea(sheet, fila) {
   datosCorreo.observacionesArea = datosFila[IDX_OBSERVAC_AREA];
 
   const html = construirCorreoAreaHTML(datosCorreo);
-  const logoBlob = DriveApp.getFileById(ID_LOGO_CORREOS).getBlob().setName("logoDavivienda");
 
   GmailApp.sendEmail(
     correos.join(","),
@@ -71,15 +361,43 @@ function enviarCorreoArea(sheet, fila) {
     {
       htmlBody: html,
       name: "Marcaciones y Reintegros - Davivienda",
-      noReply: true,
-      inlineImages: { logoDavivienda: logoBlob }
+      noReply: true
     }
   );
 
   marcarEnviado(sheet, fila, COL_NOTIF_AREA);
 }
 
-//construirCorreoClienteHTML
+function construirDatosFormulario(datosFila, nombreHoja) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hojaImport = ss.getSheetByName("IMPORT");
+  let encabezados = [];
+  if (hojaImport && hojaImport.getLastColumn() > 0) {
+    encabezados = hojaImport.getRange(1, 1, 1, hojaImport.getLastColumn()).getValues()[0];
+  }
+
+  const obj = {};
+  encabezados.forEach((h, i) => {
+    obj[normalizarTexto(h)] = datosFila[i];
+  });
+
+  obj.radicado    = datosFila[IDX_RADICADO];
+  obj.entidad     = datosFila[IDX_ENTIDAD];
+  obj.documento   = datosFila[IDX_DOCUMENTO];
+  obj.impuesto    = nombreHoja.replace("Marcación y Reintegro de ", "");
+  obj.timestampStr = datosFila[IDX_TIMESTAMP] instanceof Date
+    ? Utilities.formatDate(datosFila[IDX_TIMESTAMP], "America/Bogota", "dd/MM/yyyy HH:mm")
+    : (datosFila[IDX_TIMESTAMP] || "").toString();
+
+  return obj;
+}
+
+function marcarEnviado(sheet, fila, columna) {
+  const fecha = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm");
+  sheet.getRange(fila, columna).setValue(`ENVIADO ${fecha}`);
+}
+
+
 function construirCorreoClienteHTML(d) {
   const fechaEnvioStr = Utilities.formatDate(new Date(), "America/Bogota", "dd/MM/yyyy HH:mm");
 
@@ -111,10 +429,7 @@ function construirCorreoClienteHTML(d) {
       <tr><td style="background:#E1251B;background:linear-gradient(135deg, #E1251B 0%, #B81E15 100%);padding:18px 28px;">
         <table width="100%" cellpadding="0" cellspacing="0"><tr>
           <td align="left" valign="middle">
-            <table cellpadding="0" cellspacing="0"><tr>
-              <td valign="middle" style="padding-right:10px;"><img src="cid:logoDavivienda" alt="Davivienda" width="26" height="26" style="display:block;"></td>
-              <td valign="middle"><span style="color:#fff;font-size:15px;font-weight:700;letter-spacing:0.5px;">DAVIVIENDA</span></td>
-            </tr></table>
+            <span style="color:#fff;font-size:15px;font-weight:700;letter-spacing:0.5px;">BANCO DAVIVIENDA</span>
           </td>
           <td align="right" valign="middle"><span style="color:#ffffffcc;font-size:12px;">📅 ${fechaEnvioStr}</span></td>
         </tr></table>
@@ -183,7 +498,7 @@ function construirCorreoClienteHTML(d) {
 </table>
 </body></html>`;
 }
-//construirCorreoAreaHTML
+
 function construirCorreoAreaHTML(d) {
   const fechaEnvioStr = Utilities.formatDate(new Date(), "America/Bogota", "dd/MM/yyyy HH:mm");
 
@@ -212,10 +527,7 @@ function construirCorreoAreaHTML(d) {
       <tr><td style="background:#E1251B;background:linear-gradient(135deg, #E1251B 0%, #B81E15 100%);padding:18px 28px;">
         <table width="100%" cellpadding="0" cellspacing="0"><tr>
           <td align="left" valign="middle">
-            <table cellpadding="0" cellspacing="0"><tr>
-              <td valign="middle" style="padding-right:10px;"><img src="cid:logoDavivienda" alt="Davivienda" width="26" height="26" style="display:block;"></td>
-              <td valign="middle"><span style="color:#fff;font-size:15px;font-weight:700;letter-spacing:0.5px;">DAVIVIENDA</span></td>
-            </tr></table>
+            <span style="color:#fff;font-size:15px;font-weight:700;letter-spacing:0.5px;">BANCO DAVIVIENDA</span>
           </td>
           <td align="right" valign="middle"><span style="color:#ffffffcc;font-size:12px;">📅 ${fechaEnvioStr}</span></td>
         </tr></table>
@@ -290,4 +602,261 @@ function construirCorreoAreaHTML(d) {
   </td></tr>
 </table>
 </body></html>`;
+}
+
+function normalizarClave(valor) {
+  if (valor === null || valor === undefined) return "";
+  let s = valor.toString().trim().toLowerCase();
+  s = s.replace(/^0+(?=\d)/, "");
+  return s;
+}
+
+function normalizarTexto(texto) {
+  return (texto || "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+}
+
+function buscarIndice(encabezados, opciones) {
+  for (let i = 0; i < encabezados.length; i++) {
+    if (opciones.includes(encabezados[i])) return i;
+  }
+  return -1;
+}
+
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('InterfazEstado')
+      .setTitle('Consulta de Estado de Solicitudes')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function normalizarBusqueda(valor) {
+  if (valor === null || valor === undefined) return "";
+  let s = valor.toString().trim().toLowerCase();
+  s = s.replace(/^0+(?=\d)/, "");
+  return s;
+}
+
+function buscarRadicado(textoBusqueda) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  if (!textoBusqueda || !textoBusqueda.toString().trim()) {
+    return { exito: false, mensaje: "Por favor ingresa un radicado o documento válido." };
+  }
+
+  const busqueda = normalizarBusqueda(textoBusqueda);
+  const coincidencias = [];
+
+  for (let nombreHoja of HOJAS_DESTINO) {
+    const hoja = ss.getSheetByName(nombreHoja);
+    if (!hoja) continue;
+
+    const datos = hoja.getDataRange().getValues();
+    if (datos.length <= 1) continue;
+
+    const encabezados = datos[0];
+    const idxID = indiceColumnaPorNombre(encabezados, ["ID"]);
+
+    for (let i = 1; i < datos.length; i++) {
+      const fila = datos[i];
+      const radicadoCelda  = normalizarBusqueda(fila[IDX_RADICADO]);
+      const documentoCelda = normalizarBusqueda(fila[IDX_DOCUMENTO]);
+
+      if (radicadoCelda === busqueda || documentoCelda === busqueda) {
+        const ts = fila[IDX_TIMESTAMP];
+        const fechaStr = ts instanceof Date
+          ? Utilities.formatDate(ts, "America/Bogota", "dd/MM/yyyy")
+          : (ts || "").toString();
+
+        coincidencias.push({
+          origen:        "INTERNO",
+          fuente:        "Davivienda (interno)",
+          radicado:      fila[IDX_RADICADO],
+          id:            idxID !== -1 ? fila[idxID] : "",
+          impuesto:      nombreHoja.replace("Marcación y Reintegro de ", ""),
+          fecha:         fechaStr,
+          estado:        fila[IDX_ESTADO] || "RECIBIDO EN PROCESO",
+          observaciones: fila[IDX_OBSERVACIONES] || "Sin observaciones registradas.",
+          urlFuente:     urlHojaInterna(nombreHoja)
+        });
+      }
+    }
+  }
+
+  const hojaHist = ss.getSheetByName(HOJA_HISTORICO);
+  if (hojaHist) {
+    const datosHist = hojaHist.getDataRange().getValues();
+    if (datosHist.length > 1) {
+      const encHist = datosHist[0];
+      const idxID_h = indiceColumnaPorNombre(encHist, ["ID"]);
+
+      const numCols = encHist.length;
+      const idxOrigenHoja = numCols - 2; 
+
+      for (let i = 1; i < datosHist.length; i++) {
+        const fila = datosHist[i];
+        const radicadoCelda  = normalizarBusqueda(fila[IDX_RADICADO]);
+        const documentoCelda = normalizarBusqueda(fila[IDX_DOCUMENTO]);
+
+        if (radicadoCelda === busqueda || documentoCelda === busqueda) {
+          const ts = fila[IDX_TIMESTAMP];
+          const fechaStr = ts instanceof Date
+            ? Utilities.formatDate(ts, "America/Bogota", "dd/MM/yyyy")
+            : (ts || "").toString();
+
+          const hojaOrigen = (fila[idxOrigenHoja] || "").toString();
+          const impuestoHist = hojaOrigen.replace("Marcación y Reintegro de ", "");
+
+          coincidencias.push({
+            origen:        "INTERNO",
+            fuente:        "Davivienda (histórico archivado)",
+            radicado:      fila[IDX_RADICADO],
+            id:            idxID_h !== -1 ? fila[idxID_h] : "",
+            impuesto:      impuestoHist,
+            fecha:         fechaStr,
+            estado:        fila[IDX_ESTADO] || "",
+            observaciones: fila[IDX_OBSERVACIONES] || "Sin observaciones registradas.",
+            urlFuente:     urlHojaInterna(HOJA_HISTORICO)
+          });
+        }
+      }
+    }
+  }
+
+  FUENTES_EXTERNAS.forEach(fuente => {
+    try {
+      const ssExt = SpreadsheetApp.openById(fuente.spreadsheetId);
+      const hojaExt = ssExt.getSheetByName(fuente.pestana);
+      if (!hojaExt) return;
+
+      const datosExt = hojaExt.getDataRange().getValues();
+      if (datosExt.length <= 1) return;
+
+      const encExt = datosExt[0];
+
+      const idxRad = indiceColumnaPorNombre(encExt, [
+        "Numero de radicado", "Número de radicado", "No. Radicado", "Radicado"
+      ]);
+      const idxDoc = indiceColumnaPorNombre(encExt, [
+        "Cédula o Nit", "Cedula o Nit", "Cédula/NIT", "Cedula", "Nit", "Documento"
+      ]);
+      const idxID  = indiceColumnaPorNombre(encExt, ["ID"]);
+      const idxTs  = indiceColumnaPorNombre(encExt, ["Timestamp", "Marca temporal", "Fecha"]);
+
+      const gidPestana = hojaExt.getSheetId();
+
+      for (let i = 1; i < datosExt.length; i++) {
+        const fila = datosExt[i];
+        const radCelda = idxRad !== -1 ? normalizarBusqueda(fila[idxRad]) : "";
+        const docCelda = idxDoc !== -1 ? normalizarBusqueda(fila[idxDoc]) : "";
+
+        if ((radCelda && radCelda === busqueda) || (docCelda && docCelda === busqueda)) {
+          let fechaStr = "";
+          if (idxTs !== -1) {
+            const ts = fila[idxTs];
+            fechaStr = ts instanceof Date
+              ? Utilities.formatDate(ts, "America/Bogota", "dd/MM/yyyy")
+              : (ts || "").toString();
+          }
+
+          coincidencias.push({
+            origen:        "EXTERNO",
+            fuente:        fuente.nombre,
+            radicado:      idxRad !== -1 ? fila[idxRad] : "",
+            id:            idxID  !== -1 ? fila[idxID]  : "",
+            impuesto:      fuente.nombre,
+            fecha:         fechaStr,
+            estado:        "VER EN FUENTE",
+            observaciones: "Registro encontrado en " + fuente.nombre + ". Use el botón para abrir el documento.",
+            urlFuente:     urlFuenteExterna(fuente.spreadsheetId, gidPestana)
+          });
+        }
+      }
+    } catch (err) {
+      Logger.log("No se pudo leer " + fuente.nombre + ": " + err.message);
+    }
+  });
+
+  if (coincidencias.length === 0) {
+    return { exito: false, mensaje: "No se encontró ningún trámite con ese radicado o documento." };
+  }
+
+  return { exito: true, resultados: coincidencias };
+}
+
+function archivarCasosCerrados() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ahora = new Date();
+  const limite = new Date(ahora.getFullYear(), ahora.getMonth() - MESES_ARCHIVO, ahora.getDate());
+
+  let hojaHist = ss.getSheetByName(HOJA_HISTORICO);
+  if (!hojaHist) {
+    hojaHist = ss.insertSheet(HOJA_HISTORICO);
+  }
+
+  let totalArchivados = 0;
+
+  HOJAS_DESTINO.forEach(nombreHoja => {
+    const hoja = ss.getSheetByName(nombreHoja);
+    if (!hoja) return;
+
+    const datos = hoja.getDataRange().getValues();
+    if (datos.length <= 1) return;
+
+    const encabezados = datos[0];
+
+    if (hojaHist.getLastRow() === 0) {
+      const headerHist = [...encabezados, "Origen", "Fecha Archivado"];
+      hojaHist.getRange(1, 1, 1, headerHist.length).setValues([headerHist]);
+      hojaHist.getRange(1, 1, 1, headerHist.length)
+        .setFontWeight("bold")
+        .setBackground("#34495e")
+        .setFontColor("white")
+        .setHorizontalAlignment("center");
+      hojaHist.setFrozenRows(1);
+    }
+
+    const filasAEliminar = [];
+    const filasParaArchivar = [];
+
+    for (let i = 1; i < datos.length; i++) {
+      const fila = datos[i];
+      const estado = (fila[IDX_ESTADO] || "").toString().trim().toUpperCase();
+
+      if (estado !== "APROBADO" && estado !== "RECHAZADO") continue;
+
+      let fechaCierre = null;
+      const notificar = (fila[IDX_NOTIFICAR] || "").toString();
+      const match = notificar.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+
+      if (match) {
+        fechaCierre = new Date(match[3], parseInt(match[2], 10) - 1, match[1]);
+      } else if (fila[IDX_TIMESTAMP] instanceof Date) {
+        fechaCierre = fila[IDX_TIMESTAMP];
+      }
+
+      if (fechaCierre && fechaCierre < limite) {
+        filasParaArchivar.push([...fila, nombreHoja, new Date()]);
+        filasAEliminar.push(i + 1);
+      }
+    }
+
+    if (filasParaArchivar.length > 0) {
+      const inicio = hojaHist.getLastRow() + 1;
+      hojaHist.getRange(inicio, 1, filasParaArchivar.length, filasParaArchizer = filasParaArchivar[0].length)
+              .setValues(filasParaArchivar);
+    }
+
+    filasAEliminar.sort((a, b) => b - a).forEach(num => hoja.deleteRow(num));
+
+    totalArchivados += filasParaArchivar.length;
+  });
+
+  Logger.log(`Archivado completado: ${totalArchivados} caso(s) movido(s) al histórico.`);
+  return totalArchivados;
+}
+
+function archivarAhora() {
+  const total = archivarCasosCerrados();
+  SpreadsheetApp.getUi().alert(
+    `Archivado completado.\n\n${total} caso(s) movido(s) al Histórico.`
+  );
 }
