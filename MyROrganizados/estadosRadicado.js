@@ -1,4 +1,3 @@
-
 const IDX_TIMESTAMP = 0;  // A
 const IDX_RADICADO  = 1;  // B
 const IDX_ENTIDAD   = 2;  // C  ← NUEVA
@@ -300,126 +299,10 @@ function alEditarHoja(e) {
       if (col === COL_NOTIF_AREA) { enviarCorreoArea(sheet, fila);    return; }
     }
 
-    if (nombreHoja === HOJA_SB_OPERATIVA) {
-      if (col === COL_SB_NOTIFICAR)  { enviarCorreoClienteSB(sheet, fila); return; }
-      if (col === COL_SB_NOTIF_AREA) { enviarCorreoAreaSB(sheet, fila);    return; }
-    }
-
   } catch (err) {
     Logger.log("Error en alEditarHoja: " + err.message);
     try { e.range.setNote("Error: " + err.message); } catch (_) {}
   }
-}
-
-function enviarCorreoClienteSB(sheet, fila) {
-  const datosFila = sheet.getRange(fila, 1, 1, COL_SB_NOTIF_AREA).getValues()[0];
-  const correo = (datosFila[IDX_SB2_CORREO] || "").toString().trim();
-  if (!correo || correo.indexOf("@") === -1) {
-    sheet.getRange(fila, COL_SB_NOTIFICAR).setValue("⚠ SIN EMAIL VÁLIDO");
-    return;
-  }
-
-  const radicado = datosFila[IDX_SB2_RADICADO];
-  const nombre   = datosFila[IDX_SB2_NOMBRE];
-  const estado   = datosFila[IDX_SB_ESTADO];
-  const obs      = datosFila[IDX_SB_OBSERVACIONES];
-
-  const colorEstado = {
-    "APROBADO": "#27ae60", "RECHAZADO": "#e74c3c",
-    "REQUERIDO": "#8e44ad", "RECIBIDO EN PROCESO": "#f39c12"
-  }[estado] || "#7f8c8d";
-
-  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f6fa;font-family:Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f6fa;padding:20px 0;"><tr><td align="center">
-  <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-    <tr><td style="background:#E1251B;padding:24px 32px;color:#fff;">
-      <div style="font-size:12px;letter-spacing:1px;opacity:0.9;">BANCO DAVIVIENDA — SEGUROS BOLÍVAR</div>
-      <div style="font-size:20px;font-weight:bold;margin-top:4px;">Actualización de su solicitud</div>
-    </td></tr>
-    <tr><td style="padding:24px 32px 8px;">
-      <div style="text-align:center;padding:20px;background:#FCEBEA;border-radius:8px;border:2px dashed #E1251B;">
-        <div style="font-size:13px;color:#B81E15;letter-spacing:1px;">RADICADO</div>
-        <div style="font-size:28px;font-weight:bold;color:#B81E15;margin-top:8px;">${radicado}</div>
-        <div style="margin-top:12px;"><span style="background:${colorEstado};color:white;padding:6px 16px;border-radius:4px;font-weight:600;font-size:13px;">${estado || ""}</span></div>
-      </div>
-    </td></tr>
-    <tr><td style="padding:16px 32px;">
-      <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.6;">Estimado(a) <strong>${nombre || "solicitante"}</strong>,<br><br>Su trámite ha sido actualizado.</p>
-    </td></tr>
-    <tr><td style="padding:0 32px 24px;">
-      <div style="padding:14px 16px;background:#f8f9fa;border-left:4px solid #E1251B;border-radius:4px;font-size:13.5px;color:#1f2937;line-height:1.6;">
-        ${obs ? obs.toString().replace(/\n/g, "<br>") : "<em>Sin observaciones adicionales.</em>"}
-      </div>
-    </td></tr>
-    <tr><td style="padding:16px 32px;background:#f9fafb;border-top:1px solid #e5e7eb;font-size:11px;color:#6b7280;text-align:center;">
-      Este correo se generó automáticamente. Por favor no responda a este mensaje.<br>
-      <strong style="color:#E1251B;">Banco Davivienda S.A.</strong>
-    </td></tr>
-  </table></td></tr></table></body></html>`;
-
-  MailApp.sendEmail({
-    to: correo,
-    subject: `Davivienda — Actualización trámite Seguros Bolívar — Radicado ${radicado}`,
-    htmlBody: html,
-    name: "Marcaciones y Reintegros - Davivienda",
-    noReply: true
-  });
-
-  marcarEnviado(sheet, fila, COL_SB_NOTIFICAR);
-}
-
-function enviarCorreoAreaSB(sheet, fila) {
-  const datosFila = sheet.getRange(fila, 1, 1, COL_SB_NOTIF_AREA).getValues()[0];
-  const correoAreaRaw = (datosFila[IDX_SB_CORREO_AREA] || "").toString().trim();
-  if (!correoAreaRaw) {
-    sheet.getRange(fila, COL_SB_NOTIF_AREA).setValue("⚠ SIN CORREO ÁREA");
-    return;
-  }
-  const correos = correoAreaRaw.split(/[,;]/).map(c => c.trim()).filter(c => c.indexOf("@") !== -1);
-  if (correos.length === 0) {
-    sheet.getRange(fila, COL_SB_NOTIF_AREA).setValue("⚠ CORREO INVÁLIDO");
-    return;
-  }
-
-  const radicado = datosFila[IDX_SB2_RADICADO];
-  const nombre   = datosFila[IDX_SB2_NOMBRE];
-  const idCli    = datosFila[IDX_SB2_ID_CLIENTE];
-  const obsArea  = datosFila[IDX_SB_OBSERVAC_AREA];
-
-  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#eef2f7;font-family:Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#eef2f7;padding:20px 0;"><tr><td align="center">
-  <table width="640" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.08);">
-    <tr><td style="background:#E1251B;padding:22px 32px;color:#fff;">
-      <div style="font-size:11px;letter-spacing:2px;opacity:0.85;">REMISIÓN INTERNA — BANCO DAVIVIENDA</div>
-      <div style="font-size:19px;font-weight:bold;margin-top:6px;">Trámite remitido para gestión</div>
-    </td></tr>
-    <tr><td style="padding:20px 32px;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;">
-        <tr><td style="padding:8px 12px;background:#f1f5f9;font-weight:600;font-size:13px;width:38%;">Radicado</td><td style="padding:8px 12px;font-size:13px;"><strong>${radicado}</strong></td></tr>
-        <tr><td style="padding:8px 12px;background:#f1f5f9;font-weight:600;font-size:13px;">Cliente</td><td style="padding:8px 12px;font-size:13px;">${nombre || ""}</td></tr>
-        <tr><td style="padding:8px 12px;background:#f1f5f9;font-weight:600;font-size:13px;">ID Cliente</td><td style="padding:8px 12px;font-size:13px;">${idCli || ""}</td></tr>
-      </table>
-    </td></tr>
-    <tr><td style="padding:0 32px 20px;">
-      <div style="font-size:12px;font-weight:bold;color:#B81E15;text-transform:uppercase;margin-bottom:8px;">Instrucciones</div>
-      <div style="padding:14px 18px;background:#eff6ff;border-left:4px solid #B81E15;border-radius:4px;font-size:13.5px;color:#0f172a;line-height:1.6;">
-        ${obsArea ? obsArea.toString().replace(/\n/g, "<br>") : "<em>Sin instrucciones específicas.</em>"}
-      </div>
-    </td></tr>
-    <tr><td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:11px;color:#64748b;text-align:center;">
-      Comunicación interna generada automáticamente.<br><strong style="color:#B81E15;">Banco Davivienda S.A.</strong>
-    </td></tr>
-  </table></td></tr></table></body></html>`;
-
-  MailApp.sendEmail({
-    to: correos.join(","),
-    subject: `[Remisión Interna] Seguros Bolívar — Radicado ${radicado}`,
-    htmlBody: html,
-    name: "Marcaciones y Reintegros - Davivienda",
-    noReply: true
-  });
-
-  marcarEnviado(sheet, fila, COL_SB_NOTIF_AREA);
 }
 
 
@@ -439,14 +322,16 @@ function enviarCorreoCliente(sheet, fila) {
 
   const html = construirCorreoClienteHTML(datosCorreo);
 
-  MailApp.sendEmail({
-    to: email,
-    subject: `Davivienda — Actualización trámite ${datosCorreo.impuesto} — Radicado ${datosCorreo.radicado}`,
-    htmlBody: html,
-    name: "Marcaciones y Reintegros - Davivienda",  
-    noReply: true
-
-  });
+  GmailApp.sendEmail(
+    email,
+    `Davivienda — Actualización trámite ${datosCorreo.impuesto} — Radicado ${datosCorreo.radicado}`,
+    "Actualización de su trámite. Abra este correo en un cliente compatible con HTML.",
+    {
+      htmlBody: html,
+      name: "Marcaciones y Reintegros - Davivienda",
+      noReply: true
+    }
+  );
 
   marcarEnviado(sheet, fila, COL_NOTIFICAR);
 }
@@ -478,13 +363,16 @@ function enviarCorreoArea(sheet, fila) {
 
   const html = construirCorreoAreaHTML(datosCorreo);
 
-  MailApp.sendEmail({
-    to: correos.join(","),
-    subject: `[Remisión Interna] Trámite ${datosCorreo.impuesto} — Radicado ${datosCorreo.radicado}`,
-    htmlBody: html,
-    name: "Marcaciones y Reintegros - Davivienda",
-    noReply: true
-  });
+  GmailApp.sendEmail(
+    correos.join(","),
+    `[Remisión Interna] Trámite ${datosCorreo.impuesto} — Radicado ${datosCorreo.radicado}`,
+    "Trámite remitido para gestión. Abra este correo en un cliente compatible con HTML.",
+    {
+      htmlBody: html,
+      name: "Marcaciones y Reintegros - Davivienda",
+      noReply: true
+    }
+  );
 
   marcarEnviado(sheet, fila, COL_NOTIF_AREA);
 }
@@ -522,6 +410,7 @@ function marcarEnviado(sheet, fila, columna) {
 
 function construirCorreoClienteHTML(d) {
   const fechaEnvioStr = Utilities.formatDate(new Date(), "America/Bogota", "dd/MM/yyyy HH:mm");
+
   const colorEstado = {
     "APROBADO":  "#27ae60",
     "RECHAZADO": "#e74c3c",
@@ -547,24 +436,18 @@ function construirCorreoClienteHTML(d) {
   <tr><td align="center">
     <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 
-      <!-- Cabecera roja -->
-            <!-- Cabecera roja -->
-      <tr><td style="background:#E1251B;padding:18px 28px;">
+      <tr><td style="background:#E1251B;background:linear-gradient(135deg, #E1251B 0%, #B81E15 100%);padding:18px 28px;">
         <table width="100%" cellpadding="0" cellspacing="0"><tr>
           <td align="left" valign="middle">
-            <table cellpadding="0" cellspacing="0"><tr>
-              <td valign="middle" style="padding-right:10px;"><img src="PEGA_AQUI_EL_LOGO_BASE64" alt="Davivienda" width="26" height="26" style="display:block;"></td>
-              <td valign="middle"><span style="color:#fff;font-size:15px;font-weight:700;letter-spacing:0.5px;">DAVIVIENDA</span></td>
-            </tr></table>
+            <span style="color:#fff;font-size:15px;font-weight:700;letter-spacing:0.5px;">BANCO DAVIVIENDA</span>
           </td>
           <td align="right" valign="middle"><span style="color:#ffffffcc;font-size:12px;">📅 ${fechaEnvioStr}</span></td>
         </tr></table>
       </td></tr>
-      <tr><td style="background:#E1251B;padding:0 28px 20px;color:#fff;">
+      <tr><td style="background:#E1251B;background:linear-gradient(135deg, #E1251B 0%, #B81E15 100%);padding:0 28px 20px;color:#fff;">
         <div style="font-size:20px;font-weight:bold;">Actualización de su solicitud</div>
       </td></tr>
 
-      <!-- Número de radicado destacado -->
       <tr><td style="padding:24px 32px 8px;">
         <div style="text-align:center;padding:20px;background:#FCEBEA;border-radius:8px;border:2px dashed #E1251B;">
           <div style="font-size:13px;color:#B81E15;letter-spacing:1px;">RADICADO</div>
@@ -575,7 +458,6 @@ function construirCorreoClienteHTML(d) {
         </div>
       </td></tr>
 
-      <!-- Saludo -->
       <tr><td style="padding:16px 32px;">
         <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.6;">
         Estimado(a) <strong>${d.razonsocial || "solicitante"}</strong>,<br><br>
@@ -584,7 +466,6 @@ function construirCorreoClienteHTML(d) {
         </p>
       </td></tr>
 
-      <!-- Tabla resumen -->
       <tr><td style="padding:0 32px 16px;">
         <div style="font-size:13px;font-weight:bold;color:#E1251B;text-transform:uppercase;margin-bottom:8px;letter-spacing:0.5px;">Resumen de la solicitud</div>
         <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;">
@@ -604,7 +485,6 @@ function construirCorreoClienteHTML(d) {
         </table>
       </td></tr>
 
-      <!-- Observaciones -->
       <tr><td style="padding:0 32px 16px;">
         <div style="font-size:13px;font-weight:bold;color:#E1251B;text-transform:uppercase;margin-bottom:8px;letter-spacing:0.5px;">Observaciones del trámite</div>
         <div style="padding:14px 16px;background:#f8f9fa;border-left:4px solid #E1251B;border-radius:4px;font-size:13.5px;color:#1f2937;line-height:1.6;">
@@ -612,14 +492,12 @@ function construirCorreoClienteHTML(d) {
         </div>
       </td></tr>
 
-      <!-- Nota azul -->
       <tr><td style="padding:8px 32px 24px;">
         <div style="padding:14px;background:#eff6ff;border-left:3px solid #2563eb;border-radius:4px;font-size:12.5px;color:#1e3a8a;line-height:1.6;">
           Si tiene alguna duda sobre su trámite, comuníquese con su oficina indicando el número de radicado <strong>#${d.radicado || ""}</strong>.
         </div>
       </td></tr>
 
-      <!-- Pie -->
       <tr><td style="padding:16px 32px;background:#f9fafb;border-top:1px solid #e5e7eb;font-size:11px;color:#6b7280;text-align:center;">
         Este correo se generó automáticamente. Por favor no responda a este mensaje.<br>
         <strong style="color:#E1251B;">Banco Davivienda S.A.</strong>
@@ -631,9 +509,9 @@ function construirCorreoClienteHTML(d) {
 </body></html>`;
 }
 
-
 function construirCorreoAreaHTML(d) {
   const fechaEnvioStr = Utilities.formatDate(new Date(), "America/Bogota", "dd/MM/yyyy HH:mm");
+
   const fila = (etiqueta, valor) => {
     if (!valor && valor !== 0) return "";
     return `<tr>
@@ -656,30 +534,25 @@ function construirCorreoAreaHTML(d) {
   <tr><td align="center">
     <table width="640" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.08);">
 
-      <!-- Cabecera roja -->
-      <tr><td style="background:#E1251B;padding:18px 28px;">
+      <tr><td style="background:#E1251B;background:linear-gradient(135deg, #E1251B 0%, #B81E15 100%);padding:18px 28px;">
         <table width="100%" cellpadding="0" cellspacing="0"><tr>
           <td align="left" valign="middle">
-            <table cellpadding="0" cellspacing="0"><tr>
-              <td valign="middle" style="padding-right:10px;"><img src="PEGA_AQUI_EL_LOGO_BASE64" alt="Davivienda" width="26" height="26" style="display:block;"></td>
-              <td valign="middle"><span style="color:#fff;font-size:15px;font-weight:700;letter-spacing:0.5px;">DAVIVIENDA</span></td>
-            </tr></table>
+            <span style="color:#fff;font-size:15px;font-weight:700;letter-spacing:0.5px;">BANCO DAVIVIENDA</span>
           </td>
           <td align="right" valign="middle"><span style="color:#ffffffcc;font-size:12px;">📅 ${fechaEnvioStr}</span></td>
         </tr></table>
       </td></tr>
-      <tr><td style="background:#E1251B;padding:0 28px 20px;color:#fff;">
+      <tr><td style="background:#E1251B;background:linear-gradient(135deg, #E1251B 0%, #B81E15 100%);padding:0 28px 20px;color:#fff;">
         <div style="font-size:11px;letter-spacing:2px;opacity:0.85;">REMISIÓN INTERNA</div>
         <div style="font-size:19px;font-weight:bold;margin-top:4px;">Trámite remitido para gestión</div>
       </td></tr>
-      <!-- Aviso -->
+
       <tr><td style="padding:20px 32px 10px;">
         <div style="padding:14px 18px;background:#fff7ed;border-left:4px solid #ea580c;border-radius:4px;font-size:13px;color:#7c2d12;line-height:1.6;">
           <strong>Acción requerida:</strong> Se ha remitido el siguiente trámite a su área para gestión. Por favor revise el detalle y las instrucciones al pie del correo.
         </div>
       </td></tr>
 
-      <!-- Datos del trámite -->
       <tr><td style="padding:6px 32px 14px;">
         <div style="font-size:12px;font-weight:bold;color:#0f3a6b;text-transform:uppercase;margin-bottom:8px;letter-spacing:1px;">Identificación del trámite</div>
         <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;">
@@ -691,7 +564,6 @@ function construirCorreoAreaHTML(d) {
         </table>
       </td></tr>
 
-      <!-- Datos del solicitante -->
       <tr><td style="padding:6px 32px 14px;">
         <div style="font-size:12px;font-weight:bold;color:#0f3a6b;text-transform:uppercase;margin-bottom:8px;letter-spacing:1px;">Datos del solicitante</div>
         <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;">
@@ -703,7 +575,6 @@ function construirCorreoAreaHTML(d) {
         </table>
       </td></tr>
 
-      <!-- Detalle del caso -->
       <tr><td style="padding:6px 32px 14px;">
         <div style="font-size:12px;font-weight:bold;color:#0f3a6b;text-transform:uppercase;margin-bottom:8px;letter-spacing:1px;">Detalle del caso</div>
         <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;">
@@ -718,7 +589,6 @@ function construirCorreoAreaHTML(d) {
         </table>
       </td></tr>
 
-      <!-- Observaciones del compañero al área -->
       <tr><td style="padding:6px 32px 14px;">
         <div style="font-size:12px;font-weight:bold;color:#0f3a6b;text-transform:uppercase;margin-bottom:8px;letter-spacing:1px;">Instrucciones para el área remitida</div>
         <div style="padding:14px 18px;background:#eff6ff;border-left:4px solid #2563eb;border-radius:4px;font-size:13.5px;color:#0f172a;line-height:1.6;">
@@ -726,7 +596,6 @@ function construirCorreoAreaHTML(d) {
         </div>
       </td></tr>
 
-      <!-- Observaciones del trámite (contexto adicional) -->
       <tr><td style="padding:6px 32px 18px;">
         <div style="font-size:12px;font-weight:bold;color:#0f3a6b;text-transform:uppercase;margin-bottom:8px;letter-spacing:1px;">Observaciones generales del trámite</div>
         <div style="padding:14px 18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;font-size:13px;color:#334155;line-height:1.6;">
@@ -734,7 +603,6 @@ function construirCorreoAreaHTML(d) {
         </div>
       </td></tr>
 
-      <!-- Pie -->
       <tr><td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:11px;color:#64748b;text-align:center;">
         Comunicación interna generada automáticamente desde el sistema de gestión de marcaciones y reintegros.<br>
         <strong style="color:#0f3a6b;">Banco Davivienda S.A.</strong>
@@ -745,7 +613,6 @@ function construirCorreoAreaHTML(d) {
 </table>
 </body></html>`;
 }
-
 function normalizarClave(valor) {
   if (valor === null || valor === undefined) return "";
   let s = valor.toString().trim().toLowerCase();
@@ -779,7 +646,6 @@ function normalizarBusqueda(valor) {
 }
 
 function buscarRadicado(textoBusqueda) {
-  incrementarContadorConsultas(); 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   if (!textoBusqueda || !textoBusqueda.toString().trim()) {
@@ -918,28 +784,6 @@ function buscarRadicado(textoBusqueda) {
       Logger.log("No se pudo leer " + fuente.nombre + ": " + err.message);
     }
   });
-  const hojaSB = ss.getSheetByName(HOJA_SB_OPERATIVA);
-    if (hojaSB) {
-      const datosSB = hojaSB.getDataRange().getValues();
-      for (let i = 1; i < datosSB.length; i++) {
-        const fila = datosSB[i];
-        const radCelda = normalizarBusqueda(fila[IDX_SB2_RADICADO]);
-        const docCelda = normalizarBusqueda(fila[IDX_SB2_ID_CLIENTE]);
-        if (radCelda === busqueda || docCelda === busqueda) {
-          coincidencias.push({
-            origen:        "INTERNO",
-            fuente:        "Davivienda (Seguros Bolívar)",
-            radicado:      fila[IDX_SB2_RADICADO],
-            id:            fila[IDX_SB2_ID_CLIENTE],
-            impuesto:      "Seguros Bolívar",
-            fecha:         "",
-            estado:        fila[IDX_SB_ESTADO] || "RECIBIDO EN PROCESO",
-            observaciones: fila[IDX_SB_OBSERVACIONES] || "Sin observaciones registradas.",
-            urlFuente:     urlHojaInterna(HOJA_SB_OPERATIVA)
-          });
-        }
-      }
-    }
 
   if (coincidencias.length === 0) {
     return { exito: false, mensaje: "No se encontró ningún trámite con ese radicado o documento." };
@@ -1026,162 +870,4 @@ function archivarAhora() {
   SpreadsheetApp.getUi().alert(
     `Archivado completado.\n\n${total} caso(s) movido(s) al Histórico.`
   );
-}
-
-
-// ============================================================================
-// SEGUROS BOLÍVAR — DISTRIBUCIÓN Y NOTIFICACIONES (Archivo ORGANIZADOS)
-// ============================================================================
-
-const HOJA_SB_IMPORT    = "IMPORT_SegurosBolivar";
-const HOJA_SB_OPERATIVA = "Seguros Bolívar";
-
-const IDX_SB2_RADICADO   = 2;  // C
-const IDX_SB2_ID_CLIENTE = 11; // L
-const IDX_SB2_DV         = 12; // M
-const IDX_SB2_NOMBRE     = 13; // N
-const IDX_SB2_CORREO     = 15; // P
-const COL_SB_ESTADO        = 20; // T
-const COL_SB_OBSERVACIONES = 21; // U
-const COL_SB_NOTIFICAR     = 22; // V
-const COL_SB_CORREO_AREA   = 23; // W
-const COL_SB_OBSERVAC_AREA = 24; // X
-const COL_SB_NOTIF_AREA    = 25; // Y
-
-const IDX_SB_ESTADO        = COL_SB_ESTADO - 1;
-const IDX_SB_OBSERVACIONES = COL_SB_OBSERVACIONES - 1;
-const IDX_SB_NOTIFICAR     = COL_SB_NOTIFICAR - 1;
-const IDX_SB_CORREO_AREA   = COL_SB_CORREO_AREA - 1;
-const IDX_SB_OBSERVAC_AREA = COL_SB_OBSERVAC_AREA - 1;
-const IDX_SB_NOTIF_AREA    = COL_SB_NOTIF_AREA - 1;
-
-function distribuirSegurosBolivar() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const hojaImport = ss.getSheetByName(HOJA_SB_IMPORT);
-  if (!hojaImport) { Logger.log("No existe " + HOJA_SB_IMPORT); return; }
-
-  const datos = hojaImport.getDataRange().getValues();
-  if (datos.length <= 1) return;
-
-  const encabezadosOriginales = datos[0];
-  const filas = datos.slice(1);
-
-  let nuevosEncabezados = [...encabezadosOriginales];
-  while (nuevosEncabezados.length < IDX_SB_ESTADO) nuevosEncabezados.push("");
-  nuevosEncabezados[IDX_SB_ESTADO]        = "ESTADO";
-  nuevosEncabezados[IDX_SB_OBSERVACIONES] = "OBSERVACIONES";
-  nuevosEncabezados[IDX_SB_NOTIFICAR]     = "NOTIFICAR";
-  nuevosEncabezados[IDX_SB_CORREO_AREA]   = "CORREO_AREA";
-  nuevosEncabezados[IDX_SB_OBSERVAC_AREA] = "OBSERVACIONES_AREA";
-  nuevosEncabezados[IDX_SB_NOTIF_AREA]    = "NOTIFICAR_AREA";
-
-  let hojaDestino = ss.getSheetByName(HOJA_SB_OPERATIVA);
-  const guardados = {};
-
-  if (hojaDestino) {
-    const datosDestino = hojaDestino.getDataRange().getValues();
-    for (let i = 1; i < datosDestino.length; i++) {
-      const rad = normalizarRadicadoSB(datosDestino[i][IDX_SB2_RADICADO]);
-      if (rad) {
-        guardados[rad] = {
-          estado:        datosDestino[i][IDX_SB_ESTADO]        || ESTADO_POR_DEFECTO,
-          observaciones: datosDestino[i][IDX_SB_OBSERVACIONES] || "",
-          notificar:     datosDestino[i][IDX_SB_NOTIFICAR]     || NOTIFICAR_DEFECTO,
-          correoArea:    datosDestino[i][IDX_SB_CORREO_AREA]    || "",
-          observAreas:   datosDestino[i][IDX_SB_OBSERVAC_AREA]  || "",
-          notifArea:     datosDestino[i][IDX_SB_NOTIF_AREA]     || NOTIFICAR_DEFECTO
-        };
-      }
-    }
-  } else {
-    hojaDestino = ss.insertSheet(HOJA_SB_OPERATIVA);
-  }
-
-  const filasNuevas = [];
-  filas.forEach(fila => {
-    const radicado = (fila[IDX_SB2_RADICADO] || "").toString().trim();
-    if (!radicado) return;
-
-    let f = [...fila];
-    while (f.length < IDX_SB_ESTADO) f.push("");
-
-    const radClave = normalizarRadicadoSB(fila[IDX_SB2_RADICADO]);
-    const g = guardados[radClave];
-
-    if (g) {
-      f[IDX_SB_ESTADO] = g.estado; f[IDX_SB_OBSERVACIONES] = g.observaciones;
-      f[IDX_SB_NOTIFICAR] = g.notificar; f[IDX_SB_CORREO_AREA] = g.correoArea;
-      f[IDX_SB_OBSERVAC_AREA] = g.observAreas; f[IDX_SB_NOTIF_AREA] = g.notifArea;
-    } else {
-      f[IDX_SB_ESTADO] = ESTADO_POR_DEFECTO; f[IDX_SB_OBSERVACIONES] = "";
-      f[IDX_SB_NOTIFICAR] = NOTIFICAR_DEFECTO; f[IDX_SB_CORREO_AREA] = "";
-      f[IDX_SB_OBSERVAC_AREA] = ""; f[IDX_SB_NOTIF_AREA] = NOTIFICAR_DEFECTO;
-    }
-    filasNuevas.push(f);
-  });
-
-  
-  hojaDestino.clearContents();
-  hojaDestino.clearFormats();
-  const dataFinal = [nuevosEncabezados, ...filasNuevas];
-
-  if (dataFinal.length > 0) {
-    hojaDestino.getRange(1, 1, dataFinal.length, dataFinal[0].length).setValues(dataFinal);
-    hojaDestino.getRange(1, 1, 1, dataFinal[0].length)
-      .setFontWeight("bold").setBackground("#E1251B").setFontColor("white")
-      .setHorizontalAlignment("center");
-
-    if (filasNuevas.length > 0) {
-      const rEstadoSB = hojaDestino.getRange(2, COL_SB_ESTADO, filasNuevas.length, 1);
-      rEstadoSB.setDataValidation(
-        SpreadsheetApp.newDataValidation().requireValueInList(ESTADOS_DISPONIBLES).setAllowInvalid(false).build()
-      );
-
-      const rNotifSB = hojaDestino.getRange(2, COL_SB_NOTIFICAR, filasNuevas.length, 1);
-      rNotifSB.setDataValidation(
-        SpreadsheetApp.newDataValidation().requireValueInList(NOTIFICAR_OPCIONES).setAllowInvalid(true).build()
-      );
-
-      const rNotifAreaSB = hojaDestino.getRange(2, COL_SB_NOTIF_AREA, filasNuevas.length, 1);
-      rNotifAreaSB.setDataValidation(
-        SpreadsheetApp.newDataValidation().requireValueInList(NOTIFICAR_OPCIONES).setAllowInvalid(true).build()
-      );
-
-      const reglasSB = [
-        SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("RECIBIDO EN PROCESO")
-          .setBackground("#fff2cc").setFontColor("#7f6000").setRanges([rEstadoSB]).build(),
-        SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("APROBADO")
-          .setBackground("#d9ead3").setFontColor("#274e13").setRanges([rEstadoSB]).build(),
-        SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("RECHAZADO")
-          .setBackground("#f4cccc").setFontColor("#990000").setRanges([rEstadoSB]).build(),
-        SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("REQUERIDO")
-          .setBackground("#d9d2e9").setFontColor("#20124d").setRanges([rEstadoSB]).build(),
-
-        SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("NO ENVIADO")
-          .setBackground("#f4cccc").setFontColor("#990000").setRanges([rNotifSB]).build(),
-        SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("ENVIAR CORREO")
-          .setBackground("#fce5cd").setFontColor("#783f04").setBold(true).setRanges([rNotifSB]).build(),
-        SpreadsheetApp.newConditionalFormatRule().whenTextContains("ENVIADO ")
-          .setBackground("#d9ead3").setFontColor("#274e13").setRanges([rNotifSB]).build(),
-
-        SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("NO ENVIADO")
-          .setBackground("#f4cccc").setFontColor("#990000").setRanges([rNotifAreaSB]).build(),
-        SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo("ENVIAR CORREO")
-          .setBackground("#cfe2f3").setFontColor("#073763").setBold(true).setRanges([rNotifAreaSB]).build(),
-        SpreadsheetApp.newConditionalFormatRule().whenTextContains("ENVIADO ")
-          .setBackground("#d9ead3").setFontColor("#274e13").setRanges([rNotifAreaSB]).build()
-      ];
-      hojaDestino.setConditionalFormatRules(reglasSB);
-
-      hojaDestino.getRange(2, COL_SB_OBSERVACIONES, filasNuevas.length, 1).setBackground("#f9f9f9");
-      hojaDestino.getRange(2, COL_SB_CORREO_AREA,   filasNuevas.length, 1).setBackground("#e3f0fb");
-      hojaDestino.getRange(2, COL_SB_OBSERVAC_AREA, filasNuevas.length, 1).setBackground("#f0f8ff");
-    }
-  }
-
-  Logger.log("Distribución Seguros Bolívar completada.");
-}
-
-function normalizarRadicadoSB(valor) {
-  return (valor || "").toString().trim().toUpperCase().replace(/\s+/g, " ");
 }
